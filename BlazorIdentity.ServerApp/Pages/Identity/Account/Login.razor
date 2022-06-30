@@ -79,7 +79,6 @@
             authStateProvider.SetAuthenticationState(Task.FromResult(new AuthenticationState(claimsPrincipal)));
 
             // Initiate request from client to endpoint to retrieve auth cookie
-            // TODO: How to handle scheme name?
             var ticket = new AuthenticationTicket(claimsPrincipal, IdentityConstants.ApplicationScheme);
             var ticketValue = CookieAuthOptions.Value.TicketDataFormat.Protect(ticket);
             var jsModule = await _jsModuleTask;

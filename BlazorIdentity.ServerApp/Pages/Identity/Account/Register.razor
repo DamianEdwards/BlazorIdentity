@@ -1,13 +1,18 @@
 ﻿@page "/Identity/Account/Register"
+@using Microsoft.AspNetCore.Authentication
+@using Microsoft.AspNetCore.Authentication.Cookies
 @using Microsoft.AspNetCore.Identity
 @using BlazorIdentity.ServerApp.Data
 @using System.ComponentModel.DataAnnotations
 @using System.ComponentModel
+@using Microsoft.Extensions.Options
 @inject IUserClaimsPrincipalFactory<AppUser> UserClaimsPrincipalFactory
 @inject UserManager<AppUser> UserManager
 @inject IUserStore<AppUser> UserStore
 @inject AuthenticationStateProvider AuthStateProvider
 @inject NavigationManager Navigate
+@inject Microsoft.JSInterop.IJSRuntime JSRuntime
+@inject IOptions<CookieAuthenticationOptions> CookieAuthOptions
 
 <PageTitle>Register</PageTitle>
 
@@ -38,6 +43,7 @@
     private RegisterModel registerModel = new();
     private ValidationMessageStore? messageStore;
     private IUserEmailStore<AppUser>? emailStore;
+    private ValueTask<IJSObjectReference> _jsModuleTask;
 
     [CascadingParameter]
     private Task<AuthenticationState>? authenticationStateTask { get; set; }
@@ -53,6 +59,7 @@
         }
 
         emailStore = (IUserEmailStore<AppUser>)UserStore;
+        _jsModuleTask = JSRuntime.InvokeAsync<IJSObjectReference>("import", "./BlazorIdentity.js");
     }
 
     private async Task HandleSubmit()
@@ -86,7 +93,12 @@
                 if (AuthStateProvider is IHostEnvironmentAuthenticationStateProvider authStateProvider)
                 {
                     authStateProvider.SetAuthenticationState(Task.FromResult(new AuthenticationState(claimsPrincipal)));
-                    // TODO: Create cookie via JsInterop
+
+                    // Initiate request from client to endpoint to retrieve auth cookie
+                    var ticket = new AuthenticationTicket(claimsPrincipal, IdentityConstants.ApplicationScheme);
+                    var ticketValue = CookieAuthOptions.Value.TicketDataFormat.Protect(ticket);
+                    var jsModule = await _jsModuleTask;
+                    await jsModule.InvokeAsync<string>("signIn", BlazorIdentityApi.SignInEndpointUrl, ticketValue, false);
                 }
                 else
                 {
