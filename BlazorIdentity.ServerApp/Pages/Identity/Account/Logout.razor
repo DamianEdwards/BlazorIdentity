@@ -1,0 +1,37 @@
+﻿@page "/Identity/Account/Logout"
+@using BlazorIdentity.ServerApp.Data
+@using Microsoft.AspNetCore.Identity
+@using System.Security.Claims
+@inject SignInManager<AppUser> SignInManager
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Navigate
+@inject Microsoft.JSInterop.IJSRuntime JSRuntime
+
+<PageTitle>Log out</PageTitle>
+
+<p>Logging out...</p>
+
+@code {
+    private ValueTask<IJSObjectReference> _jsModuleTask;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (AuthStateProvider is IHostEnvironmentAuthenticationStateProvider authStateProvider)
+        {
+            var claimsPrincipal = new ClaimsPrincipal(new ClaimsIdentity());
+            var authState = new AuthenticationState(claimsPrincipal);
+            authStateProvider.SetAuthenticationState(Task.FromResult(authState));
+    }
+
+        await SignOut();
+
+        Navigate.NavigateTo("/");
+    }
+
+    private async Task SignOut()
+    {
+        _jsModuleTask = JSRuntime.InvokeAsync<IJSObjectReference>("import", "./BlazorIdentity.js");
+        var jsModule = await _jsModuleTask;
+        await jsModule.InvokeAsync<string>("signOut", BlazorIdentityApi.SignOutEndpointUrl);
+    }
+}
