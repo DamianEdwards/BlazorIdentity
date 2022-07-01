@@ -1,0 +1,19 @@
+﻿@page "/Account/Login"
+
+@using BlazorIdentity.Server;
+@using BlazorIdentity.ServerApp.Data
+
+@inject NavigationManager Navigation
+
+<PageTitle>Log in</PageTitle>
+
+<h3>Log in</h3>
+
+<BlazorIdentity.UI.Login TUser="AppUser" OnLogin="HandleLogin" />
+
+@code {
+    private void HandleLogin()
+    {
+        Navigation.NavigateTo("/");
+    }
+}

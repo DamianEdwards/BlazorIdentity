@@ -1,13 +1,15 @@
 ﻿@typeparam TUser where TUser : class
 
 @inject IBlazorSignInManager<TUser> SignInManager
-@inject NavigationManager Navigate
 
 <p>Logging out...</p>
 
 @code {
     [CascadingParameter]
     private Task<AuthenticationState> authenticationStateTask { get; set; } = default!;
+
+    [Parameter]
+    public EventCallback OnLogout { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
@@ -18,7 +20,6 @@
             await SignInManager.SignOutAsync();
         }
 
-        // TODO: Move this to a component event and let the hosting page decide what to do
-        Navigate.NavigateTo("/");
+        await OnLogout.InvokeAsync();
     }
 }

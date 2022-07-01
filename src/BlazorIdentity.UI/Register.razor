@@ -3,7 +3,6 @@
 @inject IBlazorSignInManager<TUser> SignInManager
 @inject IBlazorUserManager<TUser> UserManager
 @inject IBlazorUserStore<TUser> UserStore
-@inject NavigationManager Navigate
 
 <EditForm class="col-5" EditContext="editContext" OnSubmit="@HandleSubmit">
     <DataAnnotationsValidator />
@@ -34,6 +33,12 @@
     [CascadingParameter]
     private Task<AuthenticationState>? authenticationStateTask { get; set; }
 
+    [Parameter]
+    public EventCallback<bool> OnRegistered { get; set; }
+
+    [Parameter]
+    public Func<TUser>? OnCreateUser { get; set; }
+
     protected override void OnInitialized()
     {
         editContext = new(registerModel);
@@ -58,7 +63,7 @@
 
         if (emailStore is null) throw new InvalidOperationException("Component not initialized");
 
-        var user = CreateUser();
+        var user = OnCreateUser is not null ? OnCreateUser() : DefaultCreateUser();
 
         await UserStore.SetUserNameAsync(user, registerModel.Email, CancellationToken.None);
         await emailStore.SetEmailAsync(user, registerModel.Email, CancellationToken.None);
@@ -72,16 +77,14 @@
 
             if (UserManager.Options.SignIn.RequireConfirmedAccount)
             {
-                // TODO: Move this to a component event and let the hosting page decide what to do
-                Navigate.NavigateTo("/Identity/Account/RegisterConfirmation");
+                await OnRegistered.InvokeAsync(true);
             }
             else
             {
                 await SignInManager.SignInAsync(user, isPersistent: false);
 
-                // TODO: Move this to a component event and let the hosting page decide what to do
                 // TODO: Implement return url?
-                Navigate.NavigateTo("/");
+                await OnRegistered.InvokeAsync(false);
             }
         }
         else
@@ -94,7 +97,7 @@
         }
     }
 
-    private TUser CreateUser()
+    private TUser DefaultCreateUser()
     {
         try
         {
@@ -103,7 +106,9 @@
         catch
         {
             throw new InvalidOperationException($"Can't create an instance of '{nameof(TUser)}'. " +
-                $"Ensure that '{nameof(TUser)}' is not an abstract class and has a parameterless constructor");
+                $"Ensure that '{nameof(TUser)}' is not an abstract class and has a parameterless " +
+                $"constructor or set the '{nameof(OnCreateUser)}' parameter to a delegate that can " +
+                "create an instance.");
         }
     }
 

@@ -1,0 +1,25 @@
+﻿@page "/Account/Register"
+
+@using BlazorIdentity.ServerApp.Data
+
+@inject NavigationManager Navigation
+
+<PageTitle>Register</PageTitle>
+
+<h3>Register</h3>
+
+<BlazorIdentity.UI.Register TUser="AppUser" OnRegistered="HandleRegistered" />
+
+@code {
+    private void HandleRegistered(bool requireConfirmedAccount)
+    {
+        if (requireConfirmedAccount)
+        {
+            // TODO: Handle account confirmation
+        }
+        else
+        {
+            Navigation.NavigateTo("/");
+        }
+    }
+}

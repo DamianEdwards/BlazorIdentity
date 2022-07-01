@@ -18,4 +18,8 @@
     <ProjectReference Include="..\..\src\BlazorIdentity.UI\BlazorIdentity.UI.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Pages\Identity\Account\" />
+  </ItemGroup>
+
 </Project>

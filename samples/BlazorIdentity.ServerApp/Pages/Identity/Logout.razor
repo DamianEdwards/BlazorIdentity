@@ -1,0 +1,16 @@
+﻿@page "/Account/Logout"
+
+@using BlazorIdentity.ServerApp.Data
+
+@inject NavigationManager Navigation
+
+<PageTitle>Log out</PageTitle>
+
+<BlazorIdentity.UI.Logout TUser="AppUser" OnLogout="HandleLogout" />
+
+@code {
+    private void HandleLogout()
+    {
+        Navigation.NavigateTo("/");
+    }
+}

@@ -1,7 +1,6 @@
 ﻿@typeparam TUser where TUser : class
 
 @inject IBlazorSignInManager<TUser> SignInManager
-@inject NavigationManager Navigate
 
 <EditForm class="col-5" EditContext="editContext" OnSubmit="@HandleSubmit">
     <DataAnnotationsValidator />
@@ -31,6 +30,12 @@
     private LoginModel loginModel = new();
     private ValidationMessageStore? messageStore;
 
+    [Parameter]
+    public EventCallback OnLogin { get; set; }
+
+    [Parameter]
+    public string FailureMessage { get; set; } = "Login failed. Please check the email address and password.";
+
     protected override void OnInitialized()
     {
         editContext = new(loginModel);
@@ -49,12 +54,11 @@
         var result = await SignInManager.PasswordSignInAsync(loginModel.Email!, loginModel.Password!, loginModel.RememberMe, lockoutOnFailure: false);
         if (result.Succeeded)
         {
-            // TODO: Move this to a component event and let the hosting page decide what to do
-            Navigate.NavigateTo("/");
+            await OnLogin.InvokeAsync();
         }
         else
         {
-            messageStore?.Add(() => loginModel, "Login failed. Please check the email address and password.");
+            messageStore?.Add(() => loginModel, FailureMessage);
             editContext.NotifyValidationStateChanged();
         }
     }
