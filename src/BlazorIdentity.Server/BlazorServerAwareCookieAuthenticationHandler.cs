@@ -13,7 +13,7 @@ using Microsoft.JSInterop;
 
 namespace BlazorIdentity.Server;
 
-public class BlazorServerAwareCookieAuthenticationHandler : CookieAuthenticationHandler
+internal class BlazorServerAwareCookieAuthenticationHandler : CookieAuthenticationHandler
 {
     public BlazorServerAwareCookieAuthenticationHandler(
         IOptionsMonitor<CookieAuthenticationOptions> options,

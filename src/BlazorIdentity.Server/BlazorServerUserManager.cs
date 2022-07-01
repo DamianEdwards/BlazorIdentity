@@ -17,7 +17,7 @@ internal class BlazorServerUserManager<TUser> : IBlazorUserManager<TUser> where 
         Options = new() { SignIn = new() { RequireConfirmedAccount = _identityOptions.SignIn.RequireConfirmedAccount } };
     }
 
-    public bool SupportsUserEmail { get; }
+    public bool SupportsUserEmail => _userManager.SupportsUserEmail;
 
     public IdentityOptions Options { get; }
 
@@ -35,6 +35,6 @@ internal class BlazorServerUserManager<TUser> : IBlazorUserManager<TUser> where 
 
     public Task<string> GetUserIdAsync(TUser user)
     {
-        throw new NotImplementedException();
+        return _userManager.GetUserIdAsync(user);
     }
 }

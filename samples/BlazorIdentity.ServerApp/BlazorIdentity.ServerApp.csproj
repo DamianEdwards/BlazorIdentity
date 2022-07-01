@@ -14,8 +14,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\BlazorIdentity.Server\BlazorIdentity.Server.csproj" />
-    <ProjectReference Include="..\BlazorIdentity.UI\BlazorIdentity.UI.csproj" />
+    <ProjectReference Include="..\..\src\BlazorIdentity.Server\BlazorIdentity.Server.csproj" />
+    <ProjectReference Include="..\..\src\BlazorIdentity.UI\BlazorIdentity.UI.csproj" />
   </ItemGroup>
 
 </Project>

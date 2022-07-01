@@ -10,12 +10,18 @@ namespace Microsoft.AspNetCore.Builder;
 
 public static class BlazorServerIdentityApi
 {
-    internal const string SignInEndpointUrl = "/Identity/Account/SignIn";
-    internal const string SignOutEndpointUrl = "/Identity/Account/SignOut";
+    internal const string SignInEndpointUrl = $"/_{nameof(BlazorServerIdentityApi)}/Account/SignIn";
+    internal const string SignOutEndpointUrl = $"/_{nameof(BlazorServerIdentityApi)}/Account/SignOut";
 
-    public static IEndpointRouteBuilder MapBlazorIdentity<TUser>(this IEndpointRouteBuilder routes) where TUser : class
+    /// <summary>
+    /// Maps API endpoints for to support Blazor Identity in Blazor Server apps.
+    /// </summary>
+    /// <typeparam name="TUser">The user type.</typeparam>
+    /// <param name="builder">The <see cref="IEndpointRouteBuilder"/>.</param>
+    /// <returns>The <see cref="IEndpointRouteBuilder"/>.</returns>
+    public static IEndpointRouteBuilder MapBlazorServerIdentityApi<TUser>(this IEndpointRouteBuilder builder) where TUser : class
     {
-        routes.MapPost(SignInEndpointUrl,
+        builder.MapPost(SignInEndpointUrl,
             async (
                 GetAuthenticationCookieRequest request,
                 HttpContext httpContext,
@@ -32,6 +38,8 @@ public static class BlazorServerIdentityApi
                     return Results.BadRequest("Missing ticket value");
                 }
 
+                // TODO: Can we use TLS token binding as a purpose here? Concerned that the circuit and JS fetch calls will actually
+                //       be over different TLS connections as HTTP/1.1 WebSocket uses a dedicated connection.
                 var ticket = options.TicketDataFormat.Unprotect(ticketValue);
                 if (ticket is null)
                 {
@@ -51,7 +59,7 @@ public static class BlazorServerIdentityApi
             })
             .ExcludeFromDescription();
 
-        routes.MapPost(SignOutEndpointUrl, async (ClaimsPrincipal user, SignInManager<TUser> signInManager) =>
+        builder.MapPost(SignOutEndpointUrl, async (ClaimsPrincipal user, SignInManager<TUser> signInManager) =>
             {
                 if (signInManager.IsSignedIn(user))
                 {
@@ -62,7 +70,7 @@ public static class BlazorServerIdentityApi
             })
             .ExcludeFromDescription();
 
-        return routes;
+        return builder;
     }
 
     private static string? GetTlsTokenBinding(HttpContext context)

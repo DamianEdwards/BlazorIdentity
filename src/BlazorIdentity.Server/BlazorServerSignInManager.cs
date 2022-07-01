@@ -10,7 +10,7 @@ using BlazorIdentity.Abstractions;
 
 namespace BlazorIdentity.Server;
 
-public class BlazorServerSignInManager<TUser> : Identity.SignInManager<TUser>, IBlazorSignInManager<TUser> where TUser : class
+internal class BlazorServerSignInManager<TUser> : Identity.SignInManager<TUser>, IBlazorSignInManager<TUser> where TUser : class
 {
     public BlazorServerSignInManager(Identity.UserManager<TUser> userManager,
         IHttpContextAccessor contextAccessor,
