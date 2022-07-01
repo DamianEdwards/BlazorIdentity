@@ -1,4 +1,4 @@
-﻿namespace BlazorIdentity.Abstractions;
+﻿namespace BlazorIdentity;
 
 public interface IBlazorUserManager<TUser> where TUser : class
 {

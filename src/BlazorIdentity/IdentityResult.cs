@@ -1,6 +1,6 @@
 ﻿using System.Globalization;
 
-namespace BlazorIdentity.Abstractions;
+namespace BlazorIdentity;
 
 public class IdentityResult
 {

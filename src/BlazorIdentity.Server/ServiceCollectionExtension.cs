@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using BlazorIdentity.Abstractions;
+using BlazorIdentity;
 using BlazorIdentity.Server;
 
 namespace Microsoft.Extensions.DependencyInjection;

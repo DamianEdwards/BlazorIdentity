@@ -1,7 +1,7 @@
 ﻿
 using System.Security.Claims;
 
-namespace BlazorIdentity.Abstractions;
+namespace BlazorIdentity;
 
 public interface IBlazorSignInManager<TUser> where TUser : class
 {

@@ -6,7 +6,6 @@ using Identity = Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.JSInterop;
-using BlazorIdentity.Abstractions;
 
 namespace BlazorIdentity.Server;
 

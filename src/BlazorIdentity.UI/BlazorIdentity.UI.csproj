@@ -17,7 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\BlazorIdentity.Abstractions\BlazorIdentity.Abstractions.csproj" />
+    <ProjectReference Include="..\BlazorIdentity\BlazorIdentity.csproj" />
   </ItemGroup>
 
 </Project>

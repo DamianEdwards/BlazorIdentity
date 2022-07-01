@@ -1,4 +1,4 @@
-﻿namespace BlazorIdentity.Abstractions;
+﻿namespace BlazorIdentity;
 
 public interface IBlazorUserEmailStore<TUser> : IBlazorUserStore<TUser> where TUser : class
 {

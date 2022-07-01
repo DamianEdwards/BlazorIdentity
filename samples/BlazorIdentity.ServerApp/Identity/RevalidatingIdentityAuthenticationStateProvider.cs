@@ -10,12 +10,12 @@ public class RevalidatingIdentityAuthenticationStateProvider<TUser>
     : RevalidatingServerAuthenticationStateProvider where TUser : class
 {
     private readonly IServiceScopeFactory _scopeFactory;
-    private readonly IdentityOptions _options;
+    private readonly Microsoft.AspNetCore.Identity.IdentityOptions _options;
 
     public RevalidatingIdentityAuthenticationStateProvider(
         ILoggerFactory loggerFactory,
         IServiceScopeFactory scopeFactory,
-        IOptions<IdentityOptions> optionsAccessor)
+        IOptions<Microsoft.AspNetCore.Identity.IdentityOptions> optionsAccessor)
         : base(loggerFactory)
     {
         _scopeFactory = scopeFactory;

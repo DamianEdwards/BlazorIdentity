@@ -1,6 +1,5 @@
 ﻿using Identity = Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
-using BlazorIdentity.Abstractions;
 
 namespace BlazorIdentity.Server;
 
