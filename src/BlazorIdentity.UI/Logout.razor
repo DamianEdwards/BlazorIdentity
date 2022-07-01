@@ -18,6 +18,7 @@
             await SignInManager.SignOutAsync();
         }
 
+        // TODO: Move this to a component event and let the hosting page decide what to do
         Navigate.NavigateTo("/");
     }
 }

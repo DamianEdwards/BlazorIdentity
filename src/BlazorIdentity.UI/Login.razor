@@ -24,6 +24,8 @@
     </div>
 </EditForm>
 
+@* TODO: Show progress UI while logging in? *@
+
 @code {
     private EditContext? editContext;
     private LoginModel loginModel = new();
@@ -47,6 +49,7 @@
         var result = await SignInManager.PasswordSignInAsync(loginModel.Email!, loginModel.Password!, loginModel.RememberMe, lockoutOnFailure: false);
         if (result.Succeeded)
         {
+            // TODO: Move this to a component event and let the hosting page decide what to do
             Navigate.NavigateTo("/");
         }
         else

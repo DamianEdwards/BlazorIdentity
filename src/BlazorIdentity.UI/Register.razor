@@ -72,12 +72,14 @@
 
             if (UserManager.Options.SignIn.RequireConfirmedAccount)
             {
+                // TODO: Move this to a component event and let the hosting page decide what to do
                 Navigate.NavigateTo("/Identity/Account/RegisterConfirmation");
             }
             else
             {
                 await SignInManager.SignInAsync(user, isPersistent: false);
 
+                // TODO: Move this to a component event and let the hosting page decide what to do
                 // TODO: Implement return url?
                 Navigate.NavigateTo("/");
             }
