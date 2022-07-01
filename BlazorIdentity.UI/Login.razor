@@ -1,0 +1,71 @@
+﻿@typeparam TUser where TUser : class
+
+@inject IBlazorSignInManager<TUser> SignInManager
+@inject NavigationManager Navigate
+
+<EditForm class="col-5" EditContext="editContext" OnSubmit="@HandleSubmit">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="mb-3">
+        <label for="email" class="form-label">Email address</label>
+        <InputText id="email" class="form-control" @bind-Value="loginModel.Email" />
+    </div>
+    <div class="mb-3">
+        <label for="password" class="form-label">Password</label>
+        <InputText id="password" type="password" class="form-control" @bind-Value="loginModel.Password" />
+    </div>
+    <div class="mb-3 form-check">
+        <InputCheckbox id="rememberMe" class="form-check-input" @bind-Value="loginModel.RememberMe" />
+        <label class="form-check-label" for="exampleCheck1">Remember me</label>
+    </div>
+    <div>
+        <button type="submit" class="btn btn-primary">Login</button>
+    </div>
+</EditForm>
+
+@code {
+    private EditContext? editContext;
+    private LoginModel loginModel = new();
+    private ValidationMessageStore? messageStore;
+
+    protected override void OnInitialized()
+    {
+        editContext = new(loginModel);
+        messageStore = new(editContext);
+    }
+
+    private async Task HandleSubmit()
+    {
+        messageStore?.Clear();
+
+        if (editContext?.Validate() != true)
+        {
+            return;
+        }
+
+        var result = await SignInManager.PasswordSignInAsync(loginModel.Email!, loginModel.Password!, loginModel.RememberMe, lockoutOnFailure: false);
+        if (result.Succeeded)
+        {
+            Navigate.NavigateTo("/");
+        }
+        else
+        {
+            messageStore?.Add(() => loginModel, "Login failed. Please check the email address and password.");
+            editContext.NotifyValidationStateChanged();
+        }
+    }
+
+    public class LoginModel
+    {
+        [Required]
+        [DataType(DataType.EmailAddress)]
+        public string? Email { get; set; }
+
+        [Required]
+        [DataType(DataType.Password)]
+        public string? Password { get; set; }
+
+        public bool RememberMe { get; set; }
+    }
+}

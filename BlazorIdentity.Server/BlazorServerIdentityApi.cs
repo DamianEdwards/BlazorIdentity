@@ -1,40 +1,48 @@
 ﻿using System.Security.Claims;
-using BlazorIdentity.ServerApp.Data;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Options;
 
 namespace Microsoft.AspNetCore.Builder;
 
-public static class BlazorIdentityApi
+public static class BlazorServerIdentityApi
 {
     internal const string SignInEndpointUrl = "/Identity/Account/SignIn";
     internal const string SignOutEndpointUrl = "/Identity/Account/SignOut";
 
-    public static IEndpointRouteBuilder MapBlazorIdentity(this IEndpointRouteBuilder routes)
+    public static IEndpointRouteBuilder MapBlazorIdentity<TUser>(this IEndpointRouteBuilder routes) where TUser : class
     {
-        routes.MapPost(SignInEndpointUrl, async (GetAuthenticationCookieRequest request, HttpContext httpContext, UserManager<AppUser> userManager, SignInManager<AppUser> signInManager, IOptions<CookieAuthenticationOptions> cookieAuthnOptions) =>
+        routes.MapPost(SignInEndpointUrl,
+            async (
+                GetAuthenticationCookieRequest request,
+                HttpContext httpContext,
+                UserManager<TUser> userManager,
+                SignInManager<TUser> signInManager,
+                IOptionsMonitor<CookieAuthenticationOptions> cookieAuthnOptions) =>
             {
-                var options = cookieAuthnOptions.Value;
+                var options = cookieAuthnOptions.Get(IdentityConstants.ApplicationScheme);
 
                 // Validate ticket
                 var ticketValue = request.Ticket;
                 if (string.IsNullOrEmpty(ticketValue))
                 {
-                    return Results.BadRequest();
+                    return Results.BadRequest("Missing ticket value");
                 }
 
                 var ticket = options.TicketDataFormat.Unprotect(ticketValue);
                 if (ticket is null)
                 {
-                    return Results.BadRequest();
+                    return Results.BadRequest("Ticket value was invalid");
                 }
 
                 // Get user and sign-in
                 var user = await userManager.GetUserAsync(ticket.Principal);
                 if (user is null)
                 {
-                    return Results.BadRequest();
+                    return Results.BadRequest("Error signing in");
                 }
 
                 await signInManager.SignInAsync(user, request.Persist);
@@ -43,7 +51,7 @@ public static class BlazorIdentityApi
             })
             .ExcludeFromDescription();
 
-        routes.MapPost(SignOutEndpointUrl, async (ClaimsPrincipal user, SignInManager<AppUser> signInManager) =>
+        routes.MapPost(SignOutEndpointUrl, async (ClaimsPrincipal user, SignInManager<TUser> signInManager) =>
             {
                 if (signInManager.IsSignedIn(user))
                 {
@@ -55,6 +63,12 @@ public static class BlazorIdentityApi
             .ExcludeFromDescription();
 
         return routes;
+    }
+
+    private static string? GetTlsTokenBinding(HttpContext context)
+    {
+        var binding = context.Features.Get<ITlsTokenBindingFeature>()?.GetProvidedTokenBindingId();
+        return binding == null ? null : Convert.ToBase64String(binding);
     }
 }
 

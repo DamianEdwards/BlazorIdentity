@@ -1,0 +1,23 @@
+﻿@typeparam TUser where TUser : class
+
+@inject IBlazorSignInManager<TUser> SignInManager
+@inject NavigationManager Navigate
+
+<p>Logging out...</p>
+
+@code {
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; } = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var user = (await authenticationStateTask).User;
+
+        if (SignInManager.IsSignedIn(user))
+        {
+            await SignInManager.SignOutAsync();
+        }
+
+        Navigate.NavigateTo("/");
+    }
+}

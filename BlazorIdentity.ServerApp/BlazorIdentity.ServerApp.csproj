@@ -13,4 +13,9 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="7.0.0-preview.7.22323.2" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\BlazorIdentity.Server\BlazorIdentity.Server.csproj" />
+    <ProjectReference Include="..\BlazorIdentity.UI\BlazorIdentity.UI.csproj" />
+  </ItemGroup>
+
 </Project>
