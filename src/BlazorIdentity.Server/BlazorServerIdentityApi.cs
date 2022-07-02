@@ -10,8 +10,12 @@ namespace Microsoft.AspNetCore.Builder;
 
 public static class BlazorServerIdentityApi
 {
-    internal const string SignInEndpointUrl = $"/_{nameof(BlazorServerIdentityApi)}/Account/SignIn";
-    internal const string SignOutEndpointUrl = $"/_{nameof(BlazorServerIdentityApi)}/Account/SignOut";
+    private const string identityApiGroupPrefix = $"/_{nameof(BlazorServerIdentityApi)}/Account";
+    private const string signInEndpointPath = "/SignIn";
+    private const string signOutEndpointPath = "/SignOut";
+
+    internal const string SignInEndpointUrl = $"{identityApiGroupPrefix}{signInEndpointPath}";
+    internal const string SignOutEndpointUrl = $"{identityApiGroupPrefix}{signOutEndpointPath}";
 
     /// <summary>
     /// Maps API endpoints for to support Blazor Identity in Blazor Server apps.
@@ -19,9 +23,13 @@ public static class BlazorServerIdentityApi
     /// <typeparam name="TUser">The user type.</typeparam>
     /// <param name="builder">The <see cref="IEndpointRouteBuilder"/>.</param>
     /// <returns>The <see cref="IEndpointRouteBuilder"/>.</returns>
-    public static IEndpointRouteBuilder MapBlazorServerIdentityApi<TUser>(this IEndpointRouteBuilder builder) where TUser : class
+    public static RouteGroupBuilder MapBlazorServerIdentityApi<TUser>(this IEndpointRouteBuilder builder) where TUser : class
     {
-        builder.MapPost(SignInEndpointUrl,
+        var group = builder.MapGroup(identityApiGroupPrefix);
+
+        group.ExcludeFromDescription();
+
+        group.MapPost(signInEndpointPath,
             async (
                 GetAuthenticationCookieRequest request,
                 HttpContext httpContext,
@@ -56,10 +64,9 @@ public static class BlazorServerIdentityApi
                 await signInManager.SignInAsync(user, request.Persist);
 
                 return Results.Ok();
-            })
-            .ExcludeFromDescription();
+            });
 
-        builder.MapPost(SignOutEndpointUrl, async (ClaimsPrincipal user, SignInManager<TUser> signInManager) =>
+        group.MapPost(signOutEndpointPath, async (ClaimsPrincipal user, SignInManager<TUser> signInManager) =>
             {
                 if (signInManager.IsSignedIn(user))
                 {
@@ -67,10 +74,9 @@ public static class BlazorServerIdentityApi
                 }
 
                 return Results.Ok();
-            })
-            .ExcludeFromDescription();
+            });
 
-        return builder;
+        return group;
     }
 
     private static string? GetTlsTokenBinding(HttpContext context)
