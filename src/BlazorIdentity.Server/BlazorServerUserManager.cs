@@ -1,5 +1,6 @@
 ﻿using Identity = Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
+using System.Security.Claims;
 
 namespace BlazorIdentity.Server;
 
@@ -32,8 +33,21 @@ internal class BlazorServerUserManager<TUser> : IBlazorUserManager<TUser> where 
         return IdentityResult.Failed(result.Errors.Select(e => new IdentityError { Code = e.Code, Description = e.Description }).ToArray());
     }
 
-    public Task<string> GetUserIdAsync(TUser user)
+    public Task<TUser?> GetUserAsync(ClaimsPrincipal principal) => _userManager.GetUserAsync(principal);
+
+    public Task<string> GetUserIdAsync(TUser user) => _userManager.GetUserIdAsync(user);
+
+    public Task<string?> GetUserNameAsync(TUser user) => _userManager.GetUserNameAsync(user);
+
+    public Task<string?> GetPhoneNumberAsync(TUser user) => _userManager.GetPhoneNumberAsync(user);
+
+    public async Task<IdentityResult> SetPhoneNumberAsync(TUser user, string? phoneNumber)
     {
-        return _userManager.GetUserIdAsync(user);
+        var baseResult = await _userManager.SetPhoneNumberAsync(user, phoneNumber);
+        return baseResult.Succeeded switch
+        {
+            true => IdentityResult.Success,
+            _ => IdentityResult.Failed(baseResult.Errors.Select(e => new IdentityError { Code = e.Code, Description = e.Description }))
+        };
     }
 }

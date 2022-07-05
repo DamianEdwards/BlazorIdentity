@@ -1,0 +1,98 @@
+﻿@typeparam TUser where TUser : class
+
+@inject IBlazorUserManager<TUser> UserManager
+@inject IBlazorSignInManager<TUser> SignInManager
+
+<StatusMessage @ref="status" Message="@statusMessage" />
+
+<EditForm class="col-5" EditContext="editContext" OnSubmit="@HandleSubmit">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="mb-3">
+        <label for="username" class="form-label">Username</label>
+        <InputText id="username" class="form-control" @bind-Value="profileModel.Username" disabled />
+    </div>
+    <div class="mb-3">
+        <label for="phoneNumber" class="form-label">Phone number</label>
+        <InputText id="phoneNumber" type="tel" class="form-control" @bind-Value="profileModel.PhoneNumber" />
+    </div>
+    <div>
+        <button type="submit" class="btn btn-primary">Save</button>
+    </div>
+</EditForm>
+
+@code {
+    private StatusMessage? status;
+    private EditContext? editContext;
+    private ProfileModel profileModel = new();
+    private ValidationMessageStore? messageStore;
+    private TUser? user;
+    private string? statusMessage;
+
+    [CascadingParameter]
+    private Task<AuthenticationState>? authenticationStateTask { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        editContext = new(profileModel);
+        messageStore = new(editContext);
+
+        if (authenticationStateTask is null) throw new InvalidOperationException("Component is not initialized.");
+
+        var authState = await authenticationStateTask;
+
+        user = await UserManager.GetUserAsync(authState.User);
+
+        if (user is null)
+        {
+            statusMessage = "Error: Unexpected failure when loading user.";
+            status?.Show();
+            return;
+        }
+
+        profileModel.Username = await UserManager.GetUserNameAsync(user);
+        profileModel.PhoneNumber = await UserManager.GetPhoneNumberAsync(user);
+    }
+
+    private async Task HandleSubmit()
+    {
+        if (user is null)
+        {
+            statusMessage = "Error: Unexpected failure when loading user.";
+            status?.Show();
+            return;
+        }
+
+        messageStore?.Clear();
+
+        if (editContext?.Validate() != true)
+        {
+            return;
+        }
+
+        var result = await UserManager.SetPhoneNumberAsync(user, profileModel.PhoneNumber);
+        if (!result.Succeeded)
+        {
+            foreach (var error in result.Errors)
+            {
+                messageStore?.Add(() => profileModel.PhoneNumber!, error.Description);
+            }
+            editContext.NotifyValidationStateChanged();
+        }
+
+        statusMessage = "Your profile has been updated.";
+        status?.Show();
+    }
+
+    public class ProfileModel
+    {
+        [Required]
+        [Display(Name = "Username")]
+        public string? Username { get; set; }
+
+        [DataType(DataType.PhoneNumber)]
+        [Display(Name = "Phone number")]
+        public string? PhoneNumber { get; set; }
+    }
+}

@@ -30,9 +30,6 @@
     private ValidationMessageStore? messageStore;
     private IBlazorUserEmailStore<TUser>? emailStore;
 
-    [CascadingParameter]
-    private Task<AuthenticationState>? authenticationStateTask { get; set; }
-
     [Parameter]
     public EventCallback<bool> OnRegistered { get; set; }
 

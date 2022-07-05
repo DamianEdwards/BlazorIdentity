@@ -1,0 +1,28 @@
+﻿<div class="alert alert-@StatusMessageClass alert-dismissable @ClassName" role="alert">
+    @Message
+    <button type="button" class="btn-close" aria-label="Close" @onclick="Hide"></button>
+</div>
+
+@code {
+    [Parameter]
+    public string? Message { get; set; }
+
+    [Parameter]
+    public bool Visible { get; set; } = false;
+
+    public void Show()
+    {
+        Visible = true;
+        StateHasChanged();
+    }
+
+    public void Hide()
+    {
+        Visible = false;
+        StateHasChanged();
+    }
+
+    private string ClassName => Visible ? "show" : "d-none";
+
+    private string StatusMessageClass => Message?.StartsWith("Error") == true ? "danger" : "success";
+}
