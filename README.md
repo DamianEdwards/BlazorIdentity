@@ -14,6 +14,10 @@ Currently supports the following operations in Blazor Server apps:
 
 <img width="1000" alt="image" src="https://user-images.githubusercontent.com/249088/177449167-a19c3efa-6a24-4e5d-ada4-1ddf617c9643.png">
 
+### Requirements
+
+This solution currently uses a daily .NET 7 SDK `main` build (see exact min-version required in the [`global.json`](global.json)). You can grab such a build from https://github.com/dotnet/installer
+
 ### TODO
 
 - New account confirmation
