@@ -1,6 +1,5 @@
-﻿using Identity = Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Options;
-using System.Security.Claims;
+﻿using System.Security.Claims;
+using Identity = Microsoft.AspNetCore.Identity;
 
 namespace BlazorIdentity.Server;
 
@@ -9,10 +8,10 @@ internal class BlazorServerUserManager<TUser> : IBlazorUserManager<TUser> where 
     private readonly Identity.UserManager<TUser> _userManager;
     private readonly Identity.IdentityOptions _identityOptions;
 
-    public BlazorServerUserManager(Identity.UserManager<TUser> userManager, IOptionsMonitor<Identity.IdentityOptions> options)
+    public BlazorServerUserManager(Identity.UserManager<TUser> userManager)
     {
         _userManager = userManager;
-        _identityOptions = options.CurrentValue;
+        _identityOptions = userManager.Options;
 
         Options = new() { SignIn = new() { RequireConfirmedAccount = _identityOptions.SignIn.RequireConfirmedAccount } };
     }
@@ -22,16 +21,7 @@ internal class BlazorServerUserManager<TUser> : IBlazorUserManager<TUser> where 
     public IdentityOptions Options { get; }
 
     public async Task<IdentityResult> CreateAsync(TUser user, string password)
-    {
-        var result = await _userManager.CreateAsync(user, password);
-
-        if (result.Succeeded)
-        {
-            return IdentityResult.Success;
-        }
-
-        return IdentityResult.Failed(result.Errors.Select(e => new IdentityError { Code = e.Code, Description = e.Description }).ToArray());
-    }
+        => ToBlazorIdentityResult(await _userManager.CreateAsync(user, password));
 
     public Task<TUser?> GetUserAsync(ClaimsPrincipal principal) => _userManager.GetUserAsync(principal);
 
@@ -42,12 +32,17 @@ internal class BlazorServerUserManager<TUser> : IBlazorUserManager<TUser> where 
     public Task<string?> GetPhoneNumberAsync(TUser user) => _userManager.GetPhoneNumberAsync(user);
 
     public async Task<IdentityResult> SetPhoneNumberAsync(TUser user, string? phoneNumber)
+        => ToBlazorIdentityResult(await _userManager.SetPhoneNumberAsync(user, phoneNumber));
+
+    public async Task<IdentityResult> ChangePasswordAsync(TUser user, string? currentPassword, string newPassword)
+        => ToBlazorIdentityResult(await _userManager.ChangePasswordAsync(user, currentPassword!, newPassword));
+
+    private static IdentityResult ToBlazorIdentityResult(Identity.IdentityResult result)
     {
-        var baseResult = await _userManager.SetPhoneNumberAsync(user, phoneNumber);
-        return baseResult.Succeeded switch
+        return result.Succeeded switch
         {
             true => IdentityResult.Success,
-            _ => IdentityResult.Failed(baseResult.Errors.Select(e => new IdentityError { Code = e.Code, Description = e.Description }))
+            _ => IdentityResult.Failed(result.Errors.Select(e => new IdentityError { Code = e.Code, Description = e.Description }))
         };
     }
 }

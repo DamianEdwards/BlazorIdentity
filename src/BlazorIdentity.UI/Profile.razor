@@ -3,8 +3,6 @@
 @inject IBlazorUserManager<TUser> UserManager
 @inject IBlazorSignInManager<TUser> SignInManager
 
-<StatusMessage @ref="status" Message="@statusMessage" />
-
 <EditForm class="col-5" EditContext="editContext" OnSubmit="@HandleSubmit">
     <DataAnnotationsValidator />
     <ValidationSummary />
@@ -23,15 +21,16 @@
 </EditForm>
 
 @code {
-    private StatusMessage? status;
     private EditContext? editContext;
     private ProfileModel profileModel = new();
     private ValidationMessageStore? messageStore;
     private TUser? user;
-    private string? statusMessage;
 
     [CascadingParameter]
     private Task<AuthenticationState>? authenticationStateTask { get; set; }
+
+    [Parameter]
+    public EventCallback OnProfileSaved { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
@@ -46,9 +45,7 @@
 
         if (user is null)
         {
-            statusMessage = "Error: Unexpected failure when loading user.";
-            status?.Show();
-            return;
+            throw new InvalidOperationException("Unexpected failure when loading user.");
         }
 
         profileModel.Username = await UserManager.GetUserNameAsync(user);
@@ -59,9 +56,7 @@
     {
         if (user is null)
         {
-            statusMessage = "Error: Unexpected failure when loading user.";
-            status?.Show();
-            return;
+            throw new InvalidOperationException("Unexpected failure when loading user.");
         }
 
         messageStore?.Clear();
@@ -72,6 +67,7 @@
         }
 
         var result = await UserManager.SetPhoneNumberAsync(user, profileModel.PhoneNumber);
+
         if (!result.Succeeded)
         {
             foreach (var error in result.Errors)
@@ -79,10 +75,10 @@
                 messageStore?.Add(() => profileModel.PhoneNumber!, error.Description);
             }
             editContext.NotifyValidationStateChanged();
+            return;
         }
 
-        statusMessage = "Your profile has been updated.";
-        status?.Show();
+        await OnProfileSaved.InvokeAsync();
     }
 
     public class ProfileModel
