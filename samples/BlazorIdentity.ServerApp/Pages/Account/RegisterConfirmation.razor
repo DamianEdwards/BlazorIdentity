@@ -1,0 +1,18 @@
+﻿@page "/Account/RegisterConfirmation/{email}"
+
+@using BlazorIdentity.ServerApp.Data
+
+@inject NavigationManager Navigation
+
+<PageTitle>Register Confirmation</PageTitle>
+
+<h3>Register Confirmation</h3>
+
+<BlazorIdentity.UI.RegisterConfirmation TUser="AppUser" Email="@email" />
+
+@code {
+
+	[Parameter]
+	public string email { get; set; } = default!;
+
+}

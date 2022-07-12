@@ -1,0 +1,62 @@
+﻿@typeparam TUser where TUser : class
+
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.Extensions.Logging
+@using Microsoft.JSInterop
+@using System.Text.Json
+
+@if (StatusMessage.Length > 0)
+{
+	<p>@StatusMessage</p>
+}
+
+@inject IBlazorUserManager<TUser> UserManager
+@inject AuthenticationStateProvider AuthProvider
+@inject IJSRuntime js
+@inject ILogger<DownloadPersonalData<TUser>> logger
+
+@code {
+	[CascadingParameter]
+	private Task<AuthenticationState> authenticationStateTask { get; set; } = default!;
+
+	public string StatusMessage { get; set; } = string.Empty;
+
+	protected override async Task OnInitializedAsync()
+	{
+		var authState = await authenticationStateTask;
+
+		var user = await UserManager.GetUserAsync(authState.User);
+
+		if (user is null)
+		{
+			StatusMessage = $"Unable to load user data";
+			StateHasChanged();
+			return;
+		}
+		
+		logger.LogWarning("User with ID {UserId} asked for their personal data.", UserManager.GetUserIdAsync(user));
+
+		var personalData = new Dictionary<string, string>();
+		var personalDataProps = typeof(TUser).GetProperties().Where(
+			prop => Attribute.IsDefined(prop, typeof(PersonalDataAttribute)));
+
+		foreach(var p in personalDataProps)
+		{
+			personalData.Add(p.Name, p.GetValue(user)?.ToString() ?? "null");
+		}
+		var logins = await UserManager.GetLoginsAsync(user!);
+		foreach(var l in logins)
+		{
+			personalData.Add($"{l.LoginProvider} external login provider key", l.ProviderKey);
+		}
+		var key = await UserManager.GetAuthenticatorKeyAsync(user!);
+		personalData.Add($"Authenticator Key", key ?? "null");
+		
+		string contentType = "application/octet-stream";
+
+		await js.InvokeVoidAsync("BlazorDownloadFile", "PersonalData.json", contentType, JsonSerializer.SerializeToUtf8Bytes(personalData));
+		StatusMessage = "Personal data has been downloaded.";
+		StateHasChanged();
+	}
+
+}

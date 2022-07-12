@@ -4,6 +4,9 @@
 
 An exploration of recreating the ASP.NET Core Identity UI functionality in Blazor components.
 
+#### As of 7/10/22 this is a copy of Damian Edward's project.
+[https://github.com/DamianEdwards/BlazorIdentity](https://github.com/DamianEdwards/BlazorIdentity)
+
 Currently supports the following operations in Blazor Server apps:
 
 - Registering a new user
@@ -20,11 +23,11 @@ This solution currently uses a daily .NET 7 SDK `main` build (see exact min-vers
 
 ### TODO
 
-- New account confirmation
+- New account confirmation (Code complete - testing required)
 - Account lockout
 - 2FA login (TOTP)
 - Password recovery
 - Social (external) login
 - Blazor WebAssembly support (via API)
-- Data download
+- Data download (Code 90% complete)
 - Delete account

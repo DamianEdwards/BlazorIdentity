@@ -1,0 +1,112 @@
+﻿@typeparam TUser where TUser : class
+
+@using Microsoft.Extensions.Logging
+
+@inject IBlazorUserManager<TUser> UserManager
+@inject IBlazorSignInManager<TUser> SignInManager
+@inject NavigationManager NavManager
+@inject AuthenticationStateProvider AuthProvider
+@inject ILogger<DeletePersonalData<TUser>> logger
+
+<div class="alert alert-warning" role="alert">
+	<p>
+        <strong>Deleting this data will permanently remove your account, and this cannot be recovered.</strong>
+    </p>
+</div>
+
+<div>
+    <EditForm class="col-5" EditContext="editContext" OnSubmit="HandleDeleteData">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="mb-3">
+            <label for="password" class="form-label">Password</label>
+            <InputText id="password" type="password" class="form-control" @bind-Value="reEnterPasswordModel.Password" />
+        </div>
+
+        <div>
+            <button type="submit" class="btn btn-primary">Delete data and close my account</button>
+        </div>
+
+    </EditForm>
+</div>
+
+@code {
+
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; } = default!;
+
+    public string StatusMessage { get; set; } = string.Empty;
+
+    public bool RequirePassword { get; set; }
+
+    private EditContext? editContext;
+    private ReEnterPasswordModel reEnterPasswordModel = new();
+    private ValidationMessageStore? messageStore;
+
+    private async Task HandleDeleteData()
+    {
+        messageStore?.Clear();
+
+        if (editContext?.Validate() != true)
+        {
+            return;
+        }
+        var authState = await authenticationStateTask;
+
+        var user = await UserManager.GetUserAsync(authState.User);
+
+        if (user is null)
+        {
+            StatusMessage = $"Unable to load user data";
+            messageStore?.Add(() => reEnterPasswordModel, StatusMessage);
+            editContext.NotifyValidationStateChanged();
+        }
+
+        var result = await UserManager.DeleteAsync(user!);
+        var userId = await UserManager.GetUserIdAsync(user!);
+
+        if (!result.Succeeded)
+        {
+            throw new InvalidOperationException($"Unexpected error occurred deleting user.");
+        }
+
+        logger.LogWarning("User with ID {userId} deleted themselves.", userId);
+
+        if (SignInManager.IsSignedIn(authState.User))
+        {
+            await SignInManager.SignOutAsync();
+        }
+        NavManager.NavigateTo("/");
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        editContext = new(reEnterPasswordModel);
+        messageStore = new(editContext);
+
+        var authState = await authenticationStateTask;
+
+        var user = await UserManager.GetUserAsync(authState.User);
+
+        if (user is null)
+        {
+            StatusMessage = $"Unable to load user data";
+            StateHasChanged();
+            return;
+        }
+
+        RequirePassword = await UserManager.HasPasswordAsync(user!);
+        StateHasChanged();
+    }
+
+    public class ReEnterPasswordModel
+    {
+        [Required]
+        [DataType(DataType.Password)]
+        [Display(Name = "Password")]
+        public string? Password { get; set; }
+
+    }
+
+}

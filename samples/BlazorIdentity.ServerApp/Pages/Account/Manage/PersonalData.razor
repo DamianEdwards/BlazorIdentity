@@ -1,8 +1,12 @@
 ﻿@page "/Account/PersonalData"
 
+@using BlazorIdentity.ServerApp.Data
+
 <PageTitle>Personal data</PageTitle>
 
+<h3>Personal Data</h3>
 
+<BlazorIdentity.UI.Manage.PersonalData TUser="AppUser" />
 
 @code {
 
