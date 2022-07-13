@@ -2,18 +2,27 @@
 
 @using BlazorIdentity.Server;
 @using BlazorIdentity.ServerApp.Data
+@using Microsoft.AspNetCore.WebUtilities
 
-@inject NavigationManager Navigation
+@inject NavigationManager NavManager
 
 <PageTitle>Log in</PageTitle>
 
 <h3>Log in</h3>
 
-<BlazorIdentity.UI.Login TUser="AppUser" OnLogin="HandleLogin" />
+<BlazorIdentity.UI.Login TUser="AppUser" OnLogin="HandleLogin" ReturnUrl="@ReturnUrl" />
 
 @code {
+    public string ReturnUrl { get; set; } = default!;
+
+    protected override void OnInitialized()
+    {
+        NavManager.TryGetQueryString<string>("ReturnUrl", out var returnUrl);
+        ReturnUrl = !string.IsNullOrEmpty(returnUrl) ? returnUrl : "/";
+    }
+
     private void HandleLogin()
     {
-        Navigation.NavigateTo("/");
+        NavManager.NavigateTo(ReturnUrl);
     }
 }

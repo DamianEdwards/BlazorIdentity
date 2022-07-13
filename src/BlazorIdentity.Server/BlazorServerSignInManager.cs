@@ -66,10 +66,50 @@ internal class BlazorServerSignInManager<TUser> : Identity.SignInManager<TUser>,
     {
         var result = await base.PasswordSignInAsync(userName, password, isPersistent, lockoutOnFailure);
 
-        return new() { Succeeded = result.Succeeded };
+        return new() 
+        { 
+            Succeeded = result.Succeeded,
+            IsLockedOut = result.IsLockedOut,
+            IsNotAllowed = result.IsNotAllowed,
+            RequiresTwoFactor = result.RequiresTwoFactor
+        };
     }
 
-    Task IBlazorSignInManager<TUser>.SignInAsync(TUser user, bool isPersistent, string? authenticationMethod)
+    async Task<SignInResult> IBlazorSignInManager<TUser>.TwoFactorRecoveryCodeSignInAsync(string recoveryCode)
+    {
+        var result = await base.TwoFactorRecoveryCodeSignInAsync(recoveryCode);
+
+		return new()
+		{
+			Succeeded = result.Succeeded,
+			IsLockedOut = result.IsLockedOut,
+			IsNotAllowed = result.IsNotAllowed,
+			RequiresTwoFactor = result.RequiresTwoFactor
+		};
+	}
+
+	async Task<SignInResult> IBlazorSignInManager<TUser>.TwoFactorAuthenticatorSignInAsync(string authenticatorCode, bool rememberMe, bool rmemberMachine)
+    {
+        var result = await base.TwoFactorAuthenticatorSignInAsync(authenticatorCode, rememberMe, rmemberMachine);
+
+        return new()
+        {
+            Succeeded = result.Succeeded,
+            IsLockedOut = result.IsLockedOut,
+            IsNotAllowed = result.IsNotAllowed,
+            RequiresTwoFactor = result.RequiresTwoFactor
+        };
+    }
+
+    async Task<TUser> IBlazorSignInManager<TUser>.GetTwoFactorAuthenticationUserAsync()
+    {
+        var result = await base.GetTwoFactorAuthenticationUserAsync();
+
+        return result!;
+    }
+
+
+	Task IBlazorSignInManager<TUser>.SignInAsync(TUser user, bool isPersistent, string? authenticationMethod)
     {
         return base.SignInAsync(user, isPersistent, authenticationMethod);
     }

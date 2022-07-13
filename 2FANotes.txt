@@ -1,0 +1,55 @@
+If I change a user in the ASPNetUsers table and set TwoFactorEnabled = true, I run into problems.
+
+The first time I tried logging in I was re-directed to the loginwith2fa page as expected. I then clicked on the link to loginwithrecoverycode successfully.
+
+This tested the work flow quite happily.
+
+I ran the test again and got an exception here:
+
+src\BlazorIdentity.UI\Login.razor line 58
+
+var result = await SignInManager.PasswordSignInAsync(loginModel.Email!, loginModel.Password!, loginModel.RememberMe, lockoutOnFailure: false);
+
+This error is coming from
+
+src\BlazorIdentity.Server\BlazorServerSignInManager.cs line 67
+
+var result = await base.PasswordSignInAsync(userName, password, isPersistent, lockoutOnFailure);
+
+Exception
+
+blazor.server.js:1 
+        
+       [2022-07-13T13:32:27.080Z] Error: System.InvalidOperationException: OnStarting cannot be set because the response has already started.
+   at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http.HttpProtocol.ThrowResponseAlreadyStartedException(String value)
+   at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http.HttpProtocol.OnStarting(Func`2 callback, Object state)
+   at Microsoft.AspNetCore.Authentication.Cookies.CookieAuthenticationHandler.InitializeHandlerAsync()
+   at Microsoft.AspNetCore.Authentication.AuthenticationHandler`1.InitializeAsync(AuthenticationScheme scheme, HttpContext context)
+   at Microsoft.AspNetCore.Authentication.AuthenticationHandlerProvider.GetHandlerAsync(HttpContext context, String authenticationScheme)
+   at Microsoft.AspNetCore.Authentication.AuthenticationService.AuthenticateAsync(HttpContext context, String scheme)
+   at Microsoft.AspNetCore.Identity.SignInManager`1.IsTwoFactorClientRememberedAsync(TUser user)
+   at Microsoft.AspNetCore.Identity.SignInManager`1.CheckPasswordSignInAsync(TUser user, String password, Boolean lockoutOnFailure)
+   at Microsoft.AspNetCore.Identity.SignInManager`1.PasswordSignInAsync(TUser user, String password, Boolean isPersistent, Boolean lockoutOnFailure)
+   at Microsoft.AspNetCore.Identity.SignInManager`1.PasswordSignInAsync(String userName, String password, Boolean isPersistent, Boolean lockoutOnFailure)
+   at BlazorIdentity.Server.BlazorServerSignInManager`1.BlazorIdentity.IBlazorSignInManager<TUser>.PasswordSignInAsync(String userName, String password, Boolean isPersistent, Boolean lockoutOnFailure) in D:\projects\BlazorIdentityFork\src\BlazorIdentity.Server\BlazorServerSignInManager.cs:line 67
+   at BlazorIdentity.UI.Login`1.HandleSubmit() in D:\projects\BlazorIdentityFork\src\BlazorIdentity.UI\Login.razor:line 58
+   at Microsoft.AspNetCore.Components.ComponentBase.CallStateHasChangedOnAsyncCompletion(Task task)
+   at Microsoft.AspNetCore.Components.Forms.EditForm.HandleSubmitAsync()
+   at Microsoft.AspNetCore.Components.ComponentBase.CallStateHasChangedOnAsyncCompletion(Task task)
+   at Microsoft.AspNetCore.Components.RenderTree.Renderer.GetErrorHandledTask(Task taskToHandle, ComponentState owningComponentState)
+log @ blazor.server.js:1
+
+I read an interesting note here:
+
+https://code-maze.com/two-step-verification-aspnet-core-identity/
+
+It is important to mention that as soon as a user gets redirected to the LoginTwoStep action, the new Identity.TwoFactorUserId cookie will be created in our browser. This cookie contains important data about the current user.
+
+I am suspicious this has something to do with what is going on. 
+
+Something left in a strange state perhaps?
+
+Anyway. Current state is if I enabled TwoFactor on the user, it throws the same exception every time. If I disable 2FA, I can login fine.
+
+I have a parallel ASP.Net Razor Pages app with scaffolded identity that uses the same database for user authentication. It does not have any issue with 2FA being enabled. It does as it should.
+

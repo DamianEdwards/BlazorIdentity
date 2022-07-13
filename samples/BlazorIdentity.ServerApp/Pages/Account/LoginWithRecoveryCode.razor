@@ -1,0 +1,19 @@
+﻿@page "/Account/LoginWithRecoveryCode"
+
+@using BlazorIdentity.Server;
+@using BlazorIdentity.ServerApp.Data
+
+@inject NavigationManager Navigation
+
+<PageTitle>Recovery code verification</PageTitle>
+
+<h1>Recovery code verification</h1>
+
+<BlazorIdentity.UI.LoginWithRecoveryCode TUser="AppUser" OnLogin="HandleLogin" />
+
+@code {
+	private void HandleLogin()
+	{
+		Navigation.NavigateTo("/");
+	}
+}

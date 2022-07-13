@@ -1,0 +1,107 @@
+﻿@typeparam TUser where TUser : class
+
+@using Microsoft.Extensions.Logging
+@inject IBlazorSignInManager<TUser> SignInManager
+@inject IBlazorUserManager<TUser> UserManager
+@inject ILogger<Login<TUser>> logger
+@inject NavigationManager NavManager
+
+<hr />
+<p>Your login is protected with an authenticator app. Enter your authenticator code below.</p>
+
+    <EditForm class="col-5" EditContext="editContext" OnSubmit="@HandleSubmit">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+        <input type="hidden" id="rememberMe" @bind-value="@RememberMe" />
+
+        <div class="mb-3">
+            <label for="TwoFactorCode" class="form-label">Authenticator code</label>
+            <InputText id="TwoFactorCode" class="form-control" @bind-Value="loginModel.TwoFactorCode" />
+        </div>
+
+        <div class="mb-3 form-check">
+            <InputCheckbox id="rememberMe" class="form-check-input" @bind-Value="loginModel.RememberMachine" />
+            <label class="form-check-label" for="exampleCheck1">Remember this machine</label>
+        </div>
+        <div>
+            <button type="submit" class="btn btn-primary">Log in</button>
+        </div>
+    </EditForm>
+<p>
+    Don't have access to your authenticator device? You can
+    <a id="recovery-code-login" href="/Account/LoginWithRecoveryCode">log in with a recovery code</a>.
+</p>
+
+@code {
+    private EditContext? editContext;
+    private LoginWith2faModel loginModel = new();
+    private ValidationMessageStore? messageStore;
+
+    [Parameter]
+    public EventCallback OnLogin { get; set; }
+
+    [Parameter]
+    public bool RememberMe { get; set; }
+
+    [Parameter]
+    public string ReturnUrl { get; set; } = string.Empty;
+
+    public string FailureMessage { get; set; } = "Invalid authenticator code.";
+
+    private async Task HandleSubmit()
+    {
+        messageStore?.Clear();
+
+        if (editContext?.Validate() != true)
+        {
+            return;
+        }
+        var user = await SignInManager.GetTwoFactorAuthenticationUserAsync();
+
+        if (user is null)
+        {
+            throw new InvalidOperationException($"Unable to load two-factor authentication user.");
+        }
+
+        var authenticatorCode = loginModel.TwoFactorCode.Replace(" ", string.Empty).Replace("-", string.Empty);
+
+        var result = await SignInManager.TwoFactorAuthenticatorSignInAsync(authenticatorCode, RememberMe, loginModel.RememberMachine);
+        
+        var userId = await UserManager.GetUserIdAsync(user);
+
+        if (result.Succeeded)
+        {
+            logger.LogWarning("User with ID '{UserId}' logged in with 2fa.", userId);
+            await OnLogin.InvokeAsync();
+        }
+        if (result.IsLockedOut)
+        {
+            logger.LogWarning("User with ID '{UserId}' account locked out.", userId);
+            NavManager.NavigateTo("/Account/Lockout");
+        }
+        else
+        {
+            logger.LogWarning("Invalid recovery code entered for user with ID '{UserId}'.", userId);
+            messageStore?.Add(() => loginModel, FailureMessage);
+            editContext.NotifyValidationStateChanged();
+        }
+    }
+
+    public class LoginWith2faModel
+    {
+        [Required]
+        [StringLength(7, ErrorMessage = "The {0} must be at least {2} and at max {1} characters long.", MinimumLength = 6)]
+        [DataType(DataType.Text)]
+        [Display(Name = "Authenticator code")]
+        public string TwoFactorCode { get; set; } = default!;
+
+        [Display(Name = "Remember this machine")]
+        public bool RememberMachine { get; set; } = false;
+    }
+
+    protected override void OnInitialized()
+    {
+        editContext = new(loginModel);
+        messageStore = new(editContext);
+    }
+}

@@ -2,7 +2,9 @@
 
 @using Microsoft.Extensions.Logging
 @inject IBlazorSignInManager<TUser> SignInManager
+@inject IBlazorUserManager<TUser> UserManager
 @inject ILogger<Login<TUser>> logger
+@inject NavigationManager NavManager
 
 <EditForm class="col-5" EditContext="editContext" OnSubmit="@HandleSubmit">
     <DataAnnotationsValidator />
@@ -36,6 +38,9 @@
     public EventCallback OnLogin { get; set; }
 
     [Parameter]
+    public string ReturnUrl { get; set; } = string.Empty;
+
+    [Parameter]
     public string FailureMessage { get; set; } = "Login failed. Please check the email address and password.";
 
     protected override void OnInitialized()
@@ -58,6 +63,15 @@
         {
             logger.LogWarning("User {user} logged in successfully", loginModel.Email);
             await OnLogin.InvokeAsync();
+        }
+        if (result.RequiresTwoFactor)
+        {
+            NavManager.NavigateTo($"/Account/LoginWith2fa?RememberMe={loginModel.RememberMe}&ReturnUrl={ReturnUrl}");
+        }
+        if (result.IsLockedOut)
+        {
+            logger.LogWarning("User {Email} locked out.", loginModel.Email);
+            NavManager.NavigateTo("/Account/LockOut");
         }
         else
         {

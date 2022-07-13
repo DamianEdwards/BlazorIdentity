@@ -32,7 +32,6 @@ internal class BlazorServerUserManager<TUser> : IBlazorUserManager<TUser> where 
 
     public Task<TUser?> GetUserAsync(ClaimsPrincipal principal) => _userManager.GetUserAsync(principal);
     public Task<string?> GetAuthenticatorKeyAsync(TUser user) => _userManager.GetAuthenticatorKeyAsync(user);
-
 	public Task<TUser?> FindByEmailAsync(string email) => _userManager.FindByEmailAsync(email);
 
     public Task<TUser?> FindByIdAsync(string userId) => _userManager.FindByIdAsync(userId);
@@ -45,7 +44,6 @@ internal class BlazorServerUserManager<TUser> : IBlazorUserManager<TUser> where 
     public Task<string?> GetUserEmailAsync(TUser user) => _userManager.GetEmailAsync(user);
 
     public Task<string> GenerateEmailConfirmationTokenAsync(TUser user) => _userManager.GenerateEmailConfirmationTokenAsync(user);
-
 
 	public Task<string?> GetUserNameAsync(TUser user) => _userManager.GetUserNameAsync(user);
 
