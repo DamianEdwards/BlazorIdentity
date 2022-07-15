@@ -1,6 +1,6 @@
 ﻿using System.Reflection;
 using System.Security.Claims;
-using Microsoft.AspNetCore.Identity;
+// using Microsoft.AspNetCore.Identity;
 namespace BlazorIdentity;
 
 public interface IBlazorUserManager<TUser> where TUser : class
@@ -19,7 +19,7 @@ public interface IBlazorUserManager<TUser> where TUser : class
 	Task<bool> HasPasswordAsync(TUser user);
 	Task<string> GenerateEmailConfirmationTokenAsync(TUser user);
 	Task<string?> GetUserNameAsync(TUser user);
-    Task<IList<UserLoginInfo>> GetLoginsAsync(TUser user);
+    Task<IList<UserLoginInfoResult>> GetLoginsAsync(TUser user);
     Task<string?> GetPhoneNumberAsync(TUser user);
     Task<IdentityResult> SetPhoneNumberAsync(TUser user, string? phoneNumber);
     Task<IdentityResult> ChangePasswordAsync(TUser user, string currentPassword, string newPassword);

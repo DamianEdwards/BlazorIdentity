@@ -21,7 +21,9 @@ internal class BlazorServerUserManager<TUser> : IBlazorUserManager<TUser> where 
 
     public IdentityOptions Options { get; }
 
-    public Task<IList<UserLoginInfo>> GetLoginsAsync(TUser user) => _userManager.GetLoginsAsync(user);
+    public async Task<IList<UserLoginInfoResult>> GetLoginsAsync(TUser user) =>
+        ToBlazorUserLoginInfoResult((List<UserLoginInfo>) await _userManager.GetLoginsAsync(user));
+
     public Task<bool> HasPasswordAsync(TUser user) => _userManager.HasPasswordAsync(user);
 
     public async Task<IdentityResult> DeleteAsync(TUser user) 
@@ -62,5 +64,21 @@ internal class BlazorServerUserManager<TUser> : IBlazorUserManager<TUser> where 
             true => IdentityResult.Success,
             _ => IdentityResult.Failed(result.Errors.Select(e => new IdentityError { Code = e.Code, Description = e.Description }))
         };
+    }
+
+    private static IList<UserLoginInfoResult> ToBlazorUserLoginInfoResult(List<Identity.UserLoginInfo> results)
+    {
+        var userLoginInfos = new List<UserLoginInfoResult>();
+        foreach (var result in results)
+        {
+            var userLoginInfo = new UserLoginInfoResult
+            {
+                LoginProvider = result.LoginProvider,
+                ProviderDisplayName = result.ProviderDisplayName!,
+                ProviderKey = result.ProviderKey
+            };
+            userLoginInfos.Add(userLoginInfo);
+        }
+        return userLoginInfos;
     }
 }
