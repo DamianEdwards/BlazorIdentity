@@ -1,8 +1,8 @@
-﻿using Microsoft.AspNetCore.Components.Authorization;
+﻿using System.Security.Claims;
+using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Server;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
-using System.Security.Claims;
 
 namespace BlazorIdentity.ServerApp.Identity;
 
@@ -13,6 +13,7 @@ public class RevalidatingIdentityAuthenticationStateProvider<TUser>
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly Microsoft.AspNetCore.Identity.IdentityOptions _options;
     private readonly SecurityStampValidatorOptions _securityStampValidatorOptions;
+    private readonly TimeSpan _revalidationInterval;
 
     public RevalidatingIdentityAuthenticationStateProvider(
         ILoggerFactory loggerFactory,
@@ -24,12 +25,18 @@ public class RevalidatingIdentityAuthenticationStateProvider<TUser>
         _logger = loggerFactory.CreateLogger<RevalidatingIdentityAuthenticationStateProvider<TUser>>();
         _scopeFactory = scopeFactory;
         _options = optionsAccessor.Value;
-
         _securityStampValidatorOptions = securityStampValidatorOptions.Value;
+
+        // Wire up the Identity security stamp validator interval to the Blazor circuit AuthN state revalidation interval
+        // as long as it's above a certain threshold as this won't be gated by requests but actually invoked on the configured
+        // interval by a timer.
+        var minRevalidationInterval = TimeSpan.FromMinutes(1);
+        _revalidationInterval = _securityStampValidatorOptions.ValidationInterval >= minRevalidationInterval
+            ? _securityStampValidatorOptions.ValidationInterval
+            : minRevalidationInterval;
     }
 
-    // Wire up the Identity security stamp validator interval to the Blazor circuit AuthN state revalidation interval
-    protected override TimeSpan RevalidationInterval => _securityStampValidatorOptions.ValidationInterval;
+    protected override TimeSpan RevalidationInterval => _revalidationInterval;
 
     protected override async Task<bool> ValidateAuthenticationStateAsync(
         AuthenticationState authenticationState, CancellationToken cancellationToken)
