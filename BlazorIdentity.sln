@@ -7,8 +7,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BlazorIdentity.ServerApp", 
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{15E7B0B0-ECB9-4E9C-A881-28817D311701}"
 	ProjectSection(SolutionItems) = preProject
-		global.json = global.json
 		2FANotes.txt = 2FANotes.txt
+		global.json = global.json
 		..\nuget.config = ..\nuget.config
 		nuget.config = nuget.config
 		README.md = README.md

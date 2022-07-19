@@ -26,6 +26,11 @@ internal class BlazorServerUserManager<TUser> : IBlazorUserManager<TUser> where 
 
     public Task<bool> HasPasswordAsync(TUser user) => _userManager.HasPasswordAsync(user);
 
+    public Task<bool> IsEmailConfirmedAsync(TUser user) => _userManager.IsEmailConfirmedAsync(user);
+
+    public async Task<IdentityResult> ResetPasswordAsync(TUser user, string code, string password)
+        => ToBlazorIdentityResult(await _userManager.ResetPasswordAsync(user, code, password));
+
     public async Task<IdentityResult> DeleteAsync(TUser user) 
         => ToBlazorIdentityResult(await _userManager.DeleteAsync(user));
 
@@ -43,9 +48,13 @@ internal class BlazorServerUserManager<TUser> : IBlazorUserManager<TUser> where 
 
 	public Task<string> GetUserIdAsync(TUser user) => _userManager.GetUserIdAsync(user);
 
-    public Task<string?> GetUserEmailAsync(TUser user) => _userManager.GetEmailAsync(user);
+    public Task<string> GeneratePasswordResetTokenAsync(TUser user) => _userManager.GeneratePasswordResetTokenAsync(user);
+
+	public Task<string?> GetUserEmailAsync(TUser user) => _userManager.GetEmailAsync(user);
 
     public Task<string> GenerateEmailConfirmationTokenAsync(TUser user) => _userManager.GenerateEmailConfirmationTokenAsync(user);
+
+    public Task<string> GenerateChangeEmailTokenAsync(TUser user, string email) => _userManager.GenerateChangeEmailTokenAsync(user, email);
 
 	public Task<string?> GetUserNameAsync(TUser user) => _userManager.GetUserNameAsync(user);
 
@@ -54,7 +63,13 @@ internal class BlazorServerUserManager<TUser> : IBlazorUserManager<TUser> where 
     public async Task<IdentityResult> SetPhoneNumberAsync(TUser user, string? phoneNumber)
         => ToBlazorIdentityResult(await _userManager.SetPhoneNumberAsync(user, phoneNumber));
 
-    public async Task<IdentityResult> ChangePasswordAsync(TUser user, string currentPassword, string newPassword)
+    public async Task<IdentityResult> ChangeEmailAsync(TUser user, string email, string code)
+        => ToBlazorIdentityResult(await _userManager.ChangeEmailAsync(user, email, code));
+
+    public async Task<IdentityResult> ChangeUserNameAsync(TUser user, string userName)
+        => ToBlazorIdentityResult(await _userManager.SetUserNameAsync(user, userName));
+
+	public async Task<IdentityResult> ChangePasswordAsync(TUser user, string currentPassword, string newPassword)
         => ToBlazorIdentityResult(await _userManager.ChangePasswordAsync(user, currentPassword, newPassword));
 
     private static IdentityResult ToBlazorIdentityResult(Identity.IdentityResult result)

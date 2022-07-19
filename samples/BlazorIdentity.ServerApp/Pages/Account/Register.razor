@@ -2,15 +2,23 @@
 
 @using BlazorIdentity.ServerApp.Data    
 
-@inject NavigationManager Navigation
+@inject NavigationManager NavManager
 
 <PageTitle>Register</PageTitle>
 
 <h3>Register</h3>
 
-<BlazorIdentity.UI.Register TUser="AppUser" OnRegistered="HandleRegistered" />
+<BlazorIdentity.UI.Register TUser="AppUser" OnRegistered="HandleRegistered" ReturnUrl="@ReturnUrl" />
 
 @code {
+    public string ReturnUrl { get; set; } = default!;
+
+    protected override void OnInitialized()
+    {
+        NavManager.TryGetQueryString<string>("ReturnUrl", out var returnUrl);
+        ReturnUrl = !string.IsNullOrEmpty(returnUrl) ? returnUrl : "/";
+    }
+
     private void HandleRegistered(bool requireConfirmedAccount)
     {
         if (requireConfirmedAccount)
@@ -19,7 +27,7 @@
         }
         else
         {
-            Navigation.NavigateTo("/");
+            NavManager.NavigateTo("/");
         }
     }
 }

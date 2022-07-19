@@ -1,0 +1,161 @@
+﻿@typeparam TUser where TUser : class
+
+@using Microsoft.AspNetCore.WebUtilities
+@using Microsoft.Extensions.Logging
+@using System.Text
+@using System.Text.Encodings.Web
+@using Microsoft.JSInterop
+
+@inject IBlazorSignInManager<TUser> SignInManager
+@inject IBlazorUserManager<TUser> UserManager
+@inject IBlazorEmailSender EmailSender
+@inject ILogger<Email<TUser>> logger
+@inject NavigationManager NavManager
+@inject IJSRuntime js
+
+<div hidden id="myAlert">
+	<div class="alert alert-success alert-dismissable fade show">
+		@StatusMessage
+		<button type="button" style="float: right;" class="btn-close" @onclick="@DismissAlert" aria-label="Close"></button>
+	</div>
+</div>
+
+
+<EditForm class="col-6" EditContext="editContext" OnSubmit="@HandleSubmit">
+	<DataAnnotationsValidator />
+	<ValidationSummary />
+
+	@if (IsEmailConfirmed)
+	{
+		<div>
+			<label for="EmailAddress" class="form-label">Email</label>
+		</div>
+		<div class="mb-3 input-group">
+			<input type="email" title="Email Address" disabled class="form-control" @bind-value="EmailAddress" />
+			<div class="input-group-append">
+				<span class="h-100 input-group-text text-success font-weight-bold">✓</span>
+			</div>
+		</div>
+	}
+	else
+	{
+		<div class="mb-3">
+			<label for="EmailAddress" class="form-label">Email</label>
+			<input type="email" disabled class="form-control" @bind-value="EmailAddress" />
+		</div>
+		<button style="margin-bottom: 20px;" id="email-verification" type="button" @onclick="@SendVerificationEmail" class="btn btn-primary">Send verification email</button>
+
+	}
+	<div class="mb-3">
+		<label for="emailModel.NewEmail" class="form-label">New email </label>
+		<InputText id="emailModel.NewEmail" class="form-control" @bind-Value="emailModel.NewEmail" />
+	</div>
+	<div>
+		<button type="submit" class="btn btn-primary">Change email</button>
+	</div>
+</EditForm>
+
+@code {
+
+	[CascadingParameter]
+	private Task<AuthenticationState>? authenticationStateTask { get; set; }
+
+	private EditContext? editContext;
+	private EmailModel emailModel = new();
+	private ValidationMessageStore? messageStore;
+	private TUser? User { get; set; } = default!;
+
+	public string EmailAddress { get; set; } = string.Empty;
+
+	public bool IsEmailConfirmed { get; set; }
+
+	public string StatusMessage { get; set; } = string.Empty;
+
+	protected override async Task OnInitializedAsync()
+	{
+		editContext = new(emailModel);
+		messageStore = new(editContext);
+		StatusMessage = string.Empty;
+
+		if (authenticationStateTask is null) throw new InvalidOperationException("Component is not initialized.");
+
+		var authState = await authenticationStateTask;
+
+		User = await UserManager.GetUserAsync(authState.User);
+		if (User is null)
+		{
+			throw new InvalidOperationException("Unexpected failure when loading user.");
+		}
+		var email = await UserManager.GetUserEmailAsync(User);
+		EmailAddress = email!;
+		emailModel.NewEmail = email;
+		IsEmailConfirmed = await UserManager.IsEmailConfirmedAsync(User);
+	}
+
+	private async Task SendVerificationEmail()
+	{
+		var userId = await UserManager.GetUserIdAsync(User!);
+		var email = await UserManager.GetUserEmailAsync(User!);
+		var code = await UserManager.GenerateEmailConfirmationTokenAsync(User!);
+		code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+		var url = $"/Account/ConfirmEmail/{userId}/{code}";
+
+		await EmailSender.SendEmailAsync(
+			emailModel.NewEmail!,
+			"Confirm your email",
+			$"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(url)}'>clicking here</a>.");
+
+		StatusMessage = "Verification email sent. Please check your email.";
+		ShowAlert();
+		StateHasChanged();
+	}
+
+	private async Task HandleSubmit()
+	{
+		messageStore?.Clear();
+
+		if (editContext?.Validate() != true)
+		{
+			return;
+		}
+		var email = await UserManager.GetUserEmailAsync(User!);
+
+		if (emailModel.NewEmail != email)
+		{
+			var userId = await UserManager.GetUserIdAsync(User!);
+			var code = await UserManager.GenerateChangeEmailTokenAsync(User!, emailModel.NewEmail!);
+			code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+			var encodedEmail = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(emailModel.NewEmail!));
+
+			var url = $"/Account/ConfirmEmailChange/{userId}/{encodedEmail}/{code}";
+			await EmailSender.SendEmailAsync(
+				emailModel.NewEmail!,
+				"Confirm your email",
+				$"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(url)}'>clicking here</a>.");
+
+			StatusMessage = "Confirmation link to change email sent. Please check your email.";
+			StateHasChanged();
+			return;
+		}
+		StatusMessage = "Your email is unchanged.";
+		StateHasChanged();
+	}
+
+	public class EmailModel
+	{
+		[Required]
+		[DataType(DataType.EmailAddress)]
+		[Display(Name = "New email")]
+		public string? NewEmail { get; set; }
+	}
+
+	public async void ShowAlert()
+	{
+		await js.InvokeVoidAsync("ShowAlert", "myAlert");
+	}
+
+	public async void DismissAlert()
+	{
+		await js.InvokeVoidAsync("DismissAlert", "myAlert");
+	}
+}

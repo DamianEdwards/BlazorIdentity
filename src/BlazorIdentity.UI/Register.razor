@@ -37,6 +37,9 @@
     private IBlazorUserEmailStore<TUser>? emailStore;
 
     [Parameter]
+    public string ReturnUrl { get; set; } = default!;
+
+    [Parameter]
     public EventCallback<bool> OnRegistered { get; set; }
 
     [Parameter]
@@ -78,17 +81,16 @@
 
             // TODO: Generate & send email confirmation stuff
             var code = await UserManager.GenerateEmailConfirmationTokenAsync(user);
+            code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
 
             var url = $"/account/register?userid={userId}&code={code}";
-            var callbackUrl = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(url));
 
             if (UserManager.Options.SignIn.RequireConfirmedAccount)
             {
                 await EmailSender.SendEmailAsync(registerModel.Email!, "Confirm your email",
-                $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
+                $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(url)}'>clicking here</a>.");
 
                 NavManager.NavigateTo($"/Account/RegisterConfirmation/{registerModel.Email}");
-//                await OnRegistered.InvokeAsync(true);
             }
             else
             {

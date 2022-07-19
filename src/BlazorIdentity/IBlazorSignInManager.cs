@@ -18,4 +18,6 @@ public interface IBlazorSignInManager<TUser> where TUser : class
     bool IsSignedIn(ClaimsPrincipal user);
 
     Task SignOutAsync();
+
+    Task RefreshSignInAsync(TUser user);
 }

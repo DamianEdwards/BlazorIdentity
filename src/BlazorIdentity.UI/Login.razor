@@ -7,91 +7,106 @@
 @inject NavigationManager NavManager
 
 <EditForm class="col-5" EditContext="editContext" OnSubmit="@HandleSubmit">
-    <DataAnnotationsValidator />
-    <ValidationSummary />
+	<DataAnnotationsValidator />
+	<ValidationSummary />
 
-    <div class="mb-3">
-        <label for="email" class="form-label">Email address</label>
-        <InputText id="email" class="form-control" @bind-Value="loginModel.Email" />
-    </div>
-    <div class="mb-3">
-        <label for="password" class="form-label">Password</label>
-        <InputText id="password" type="password" class="form-control" @bind-Value="loginModel.Password" />
-    </div>
-    <div class="mb-3 form-check">
-        <InputCheckbox id="rememberMe" class="form-check-input" @bind-Value="loginModel.RememberMe" />
-        <label class="form-check-label" for="exampleCheck1">Remember me</label>
-    </div>
-    <div>
-        <button type="submit" class="btn btn-primary">Login</button>
-    </div>
+	<div class="mb-3">
+		<label for="email" class="form-label">Email address</label>
+		<InputText id="email" class="form-control" @bind-Value="loginModel.Email" />
+	</div>
+	<div class="mb-3">
+		<label for="password" class="form-label">Password</label>
+		<InputText id="password" type="password" class="form-control" @bind-Value="loginModel.Password" />
+	</div>
+	<div class="mb-3 form-check">
+		<InputCheckbox id="rememberMe" class="form-check-input" @bind-Value="loginModel.RememberMe" />
+		<label class="form-check-label" for="exampleCheck1">Remember me</label>
+	</div>
+	<div>
+		<button type="submit" class="btn btn-primary">Login</button>
+	</div>
+	<br />
+	<div>
+		<p>
+			<a href="/Account/ForgotPassword">Forgot your password?</a>
+		</p>
+		<p>
+			<a href="/Account/Register/@ReturnUrl">Register as a new user</a>
+		</p>
+		<p>
+			<a href="/Account/ResendEmailConfirmation">Resend email confirmation</a>
+		</p>
+	</div>
+
 </EditForm>
 
 @* TODO: Show progress UI while logging in? *@
 
 @code {
-    private EditContext? editContext;
-    private LoginModel loginModel = new();
-    private ValidationMessageStore? messageStore;
+	private EditContext? editContext;
+	private LoginModel loginModel = new();
+	private ValidationMessageStore? messageStore;
 
-    [Parameter]
-    public EventCallback OnLogin { get; set; }
+	[Parameter]
+	public EventCallback OnLogin { get; set; }
 
-    [Parameter]
-    public string ReturnUrl { get; set; } = string.Empty;
+	[Parameter]
+	public string ReturnUrl { get; set; } = default!;
 
-    [Parameter]
-    public string FailureMessage { get; set; } = "Login failed. Please check the email address and password.";
+	[Parameter]
+	public string FailureMessage { get; set; } = "Login failed. Please check the email address and password.";
 
-    protected override void OnInitialized()
-    {
-        editContext = new(loginModel);
-        messageStore = new(editContext);
-    }
+	protected override void OnInitialized()
+	{
+		editContext = new(loginModel);
+		messageStore = new(editContext);
+		ReturnUrl = ReturnUrl ?? "/";
+	}
 
-    private async Task HandleSubmit()
-    {
-        messageStore?.Clear();
+	private async Task HandleSubmit()
+	{
+		messageStore?.Clear();
 
-        if (editContext?.Validate() != true)
-        {
-            return;
-        }
+		if (editContext?.Validate() != true)
+		{
+			return;
+		}
 
-        var result = await SignInManager.PasswordSignInAsync(loginModel.Email!, loginModel.Password!, loginModel.RememberMe, lockoutOnFailure: false);
-        if (result.Succeeded)
-        {
-            logger.LogWarning("User {user} logged in successfully", loginModel.Email);
-            await OnLogin.InvokeAsync();
-        }
-        if (result.RequiresTwoFactor)
-        {
-            NavManager.NavigateTo($"/Account/LoginWith2fa?RememberMe={loginModel.RememberMe}&ReturnUrl={ReturnUrl}");
-        }
-        if (result.IsLockedOut)
-        {
-            logger.LogWarning("User {Email} locked out.", loginModel.Email);
-            NavManager.NavigateTo("/Account/LockOut");
-        }
-        else
-        {
-            messageStore?.Add(() => loginModel, FailureMessage);
-            editContext.NotifyValidationStateChanged();
-        }
-    }
+		var result = await SignInManager.PasswordSignInAsync(loginModel.Email!, loginModel.Password!, loginModel.RememberMe, lockoutOnFailure: false);
+		if (result.Succeeded)
+		{
+			logger.LogWarning("User {user} logged in successfully", loginModel.Email);
+			await OnLogin.InvokeAsync();
+		}
+		if (result.RequiresTwoFactor)
+		{
+			NavManager.NavigateTo($"/Account/LoginWith2fa?RememberMe={loginModel.RememberMe}&ReturnUrl={ReturnUrl}");
+		}
+		if (result.IsLockedOut)
+		{
+			logger.LogWarning("User {Email} locked out.", loginModel.Email);
+			NavManager.NavigateTo("/Account/LockOut");
+		}
+		else
+		{
+			messageStore?.Add(() => loginModel, FailureMessage);
+			editContext.NotifyValidationStateChanged();
+		}
+	}
 
-    public class LoginModel
-    {
-        [Required]
-        [DataType(DataType.EmailAddress)]
-        [Display(Name = "Email address")]
-        public string? Email { get; set; }
+	public class LoginModel
+	{
+		[Required]
+		[DataType(DataType.EmailAddress)]
+		[Display(Name = "Email address")]
+		public string? Email { get; set; }
 
-        [Required]
-        [DataType(DataType.Password)]
-        [Display(Name = "Password")]
-        public string? Password { get; set; }
+		[Required]
+		[DataType(DataType.Password)]
+		[Display(Name = "Password")]
+		public string? Password { get; set; }
 
-        public bool RememberMe { get; set; }
-    }
+		[Display(Name = "Remember me?")]
+		public bool RememberMe { get; set; }
+	}
 }

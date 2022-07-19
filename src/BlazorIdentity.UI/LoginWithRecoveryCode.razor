@@ -3,7 +3,7 @@
 @using Microsoft.Extensions.Logging
 @inject IBlazorSignInManager<TUser> SignInManager
 @inject IBlazorUserManager<TUser> UserManager
-@inject ILogger<Login<TUser>> logger
+@inject ILogger<LoginWithRecoveryCode<TUser>> logger
 @inject NavigationManager NavManager
 
 <hr />
@@ -35,7 +35,14 @@
     private ValidationMessageStore? messageStore;
 
     [Parameter]
+    public string ReturnUrl { get; set; } = string.Empty;
+
+    [Parameter]
     public EventCallback OnLogin { get; set; }
+
+    [Parameter]
+    public string FailureMessage { get; set; } = "Invalid recovery code entered.";
+
 
     public class LoginModel
     {
@@ -85,7 +92,9 @@
         }
         else
         {
-            
+            logger.LogWarning("Invalid recovery code entered for user with ID '{UserId}' ", userId);
+            messageStore?.Add(() => loginModel, FailureMessage);
+            editContext.NotifyValidationStateChanged();
         }
     }
 }

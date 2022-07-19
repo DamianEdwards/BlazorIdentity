@@ -1,6 +1,9 @@
 ﻿@typeparam TUser where TUser : class
 
+@using Microsoft.Extensions.Logging
+
 @inject IBlazorSignInManager<TUser> SignInManager
+@inject ILogger<Login<TUser>> logger
 
 <p>Logging out...</p>
 
@@ -17,6 +20,7 @@
 
         if (SignInManager.IsSignedIn(user))
         {
+            logger.LogWarning("User logged out.");
             await SignInManager.SignOutAsync();
         }
 

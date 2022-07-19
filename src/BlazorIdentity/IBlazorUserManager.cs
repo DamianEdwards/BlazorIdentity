@@ -17,10 +17,16 @@ public interface IBlazorUserManager<TUser> where TUser : class
 	Task<string?> GetUserEmailAsync(TUser user);
     Task<string?> GetAuthenticatorKeyAsync(TUser user);
 	Task<bool> HasPasswordAsync(TUser user);
+    Task<bool> IsEmailConfirmedAsync(TUser user);
 	Task<string> GenerateEmailConfirmationTokenAsync(TUser user);
+    Task<string> GenerateChangeEmailTokenAsync(TUser user, string newEmail);
 	Task<string?> GetUserNameAsync(TUser user);
     Task<IList<UserLoginInfoResult>> GetLoginsAsync(TUser user);
     Task<string?> GetPhoneNumberAsync(TUser user);
-    Task<IdentityResult> SetPhoneNumberAsync(TUser user, string? phoneNumber);
+    Task<string> GeneratePasswordResetTokenAsync(TUser user);
+    Task<IdentityResult> ResetPasswordAsync(TUser user, string code, string password);
+	Task<IdentityResult> SetPhoneNumberAsync(TUser user, string? phoneNumber);
     Task<IdentityResult> ChangePasswordAsync(TUser user, string currentPassword, string newPassword);
+    Task<IdentityResult> ChangeEmailAsync(TUser user, string email, string code);
+    Task<IdentityResult> ChangeUserNameAsync(TUser user, string userName);
 }

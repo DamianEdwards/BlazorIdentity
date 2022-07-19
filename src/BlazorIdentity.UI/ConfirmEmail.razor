@@ -1,26 +1,24 @@
 ﻿@typeparam TUser where TUser : class
 
+@using Microsoft.AspNetCore.WebUtilities
+@using Microsoft.JSInterop
+@using System.Text
+@using System.Text.Encodings.Web
+
 @inject IBlazorSignInManager<TUser> SignInManager
 @inject IBlazorUserManager<TUser> UserManager
 @inject IBlazorUserStore<TUser> UserStore
 @inject IBlazorEmailSender EmailSender
+@inject IJSRuntime js
 @inject NavigationManager NavManager
 
-@using Microsoft.AspNetCore.WebUtilities
-@using System.Text
-@using System.Text.Encodings.Web
 
-@if (UserIdNotFound)
-{
-	<h3>Unable to load user with ID '@UserId'.</h3>
-}
-else
-{
-	<div class="alert alert-success alert-dismissable" role="alert">
-		<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+<div hidden id="myAlert">
+	<div class="alert alert-success alert-dismissable fade show">
 		@StatusMessage
+		<button type="button" style="float: right;" class="btn-close" @onclick="@DismissAlert" aria-label="Close"></button>
 	</div>
-}
+</div>
 
 @code {
 	[Parameter]
@@ -28,8 +26,6 @@ else
 
 	[Parameter]
 	public string ConfirmationCode { get; set; } = string.Empty;
-
-	public bool UserIdNotFound { get; set; } = false;
 
 	public string StatusMessage { get; set; } = string.Empty;
 
@@ -39,18 +35,30 @@ else
 		{
 			NavManager.NavigateTo("/");
 		}
-
 		var user = await UserManager.FindByIdAsync(UserId!);
 
 		if (user == null)
 		{
-			UserIdNotFound = true;
+			StatusMessage = $"Unable to load user with ID {UserId}";
+			ShowAlert();
 			StateHasChanged();
 			return;
 		}
 		ConfirmationCode = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(ConfirmationCode));
 		var result = await UserManager.ConfirmEmailAsync(user, ConfirmationCode);
 		StatusMessage = result.Succeeded ? "Thank you for confirming your email." : "Error confirming your email.";
+		ShowAlert();
 		StateHasChanged();
 	}
+
+	public async void ShowAlert()
+	{
+		await js.InvokeVoidAsync("ShowAlert", "myAlert");
+	}
+
+	public async void DismissAlert()
+	{
+		await js.InvokeVoidAsync("DismissAlert", "myAlert");
+	}
+
 }

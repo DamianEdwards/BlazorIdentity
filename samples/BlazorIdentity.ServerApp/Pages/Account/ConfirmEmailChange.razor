@@ -1,0 +1,28 @@
+﻿@page "/Account/ConfirmEmailChange/{userId}/{email}/{code}"
+
+@using BlazorIdentity.ServerApp.Data
+
+@inject NavigationManager NavManager
+
+<PageTitle>Confirm email change</PageTitle>
+
+<h1>Confirm email change</h1>
+
+<BlazorIdentity.UI.ConfirmEmailChange TUser="AppUser" UserId="@UserId" Email="@Email" Code="@Code" />
+
+@code {
+	[Parameter]
+	public string UserId { get; set; } = string.Empty;
+	[Parameter]
+	public string Email { get; set; } = string.Empty;
+	[Parameter]
+	public string Code { get; set; } = string.Empty;
+
+	protected override void OnInitialized()
+	{
+		if (string.IsNullOrEmpty(UserId) || string.IsNullOrEmpty(Email) || string.IsNullOrEmpty(Code))
+		{
+			NavManager.NavigateTo("/");	
+		}
+	}
+}

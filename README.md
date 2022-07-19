@@ -24,9 +24,16 @@ Currently supports the following operations in Blazor Server apps:
 - Return URL (courtesy of article from [Chris Sainty](https://chrissainty.com/working-with-query-strings-in-blazor/))
 - Data download
 - Delete account
+- Password recovery
+- Change Email
 - 2FA login (TOTP) - partially done. Testing incomplete. Refer [2FA Notes.txt](2FANotes.txt) for explanation of issue encountered.
 
-NOTE: 2FA requires configuring a 3rd party provider such as Twillio or SendGrid for full testing and use.
+**NOTE**: Several of the above require configuring a 3rd party provider such as Twillio or SendGrid for full testing and use.
+
+**Also fixed:**
+ - A dependency on Microsoft.AspNetCore.Identity that snuck into the BlazorIdentity project.
+ - LaunchSettings.json files that got created in BlazorIdentity and BlazorIdentity.Server projects.
+ - Cleaned out a <remove> entry in the project file of BlazorIdentity.ServerApp.
 
 <img width="1000" alt="image" src="https://user-images.githubusercontent.com/249088/177449167-a19c3efa-6a24-4e5d-ada4-1ddf617c9643.png">
 
@@ -36,6 +43,5 @@ This solution currently uses a daily .NET 7 SDK `main` build (see exact min-vers
 
 ### TODO
 
-- Password recovery (in progress)
-- Social (external) login (in progress)
-- Blazor WebAssembly support (via API). Will need clarification from DE on requirements for this. Sounds daunting.
+- Social (external)
+- Blazor WebAssembly support (via API). 

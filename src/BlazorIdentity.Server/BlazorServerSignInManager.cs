@@ -108,9 +108,13 @@ internal class BlazorServerSignInManager<TUser> : Identity.SignInManager<TUser>,
         return result!;
     }
 
-
 	Task IBlazorSignInManager<TUser>.SignInAsync(TUser user, bool isPersistent, string? authenticationMethod)
     {
         return base.SignInAsync(user, isPersistent, authenticationMethod);
+    }
+
+    Task IBlazorSignInManager<TUser>.RefreshSignInAsync(TUser user)
+    {
+        return base.RefreshSignInAsync(user);
     }
 }
