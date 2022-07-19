@@ -1,0 +1,19 @@
+﻿@page "/Account/ConfirmEmail/{userId}/{confirmationCode}"
+
+@using BlazorIdentity.ServerApp.Data
+
+<PageTitle>Confirm Email</PageTitle>
+
+<h1>Confirm Email</h1>
+
+<BlazorIdentity.UI.ConfirmEmail TUser="AppUser" UserId="@userId" ConfirmationCode="@confirmationCode" />
+
+@code {
+
+	[Parameter]
+	public string userId { get; set; } = default!;
+
+	[Parameter]
+	public string confirmationCode { get; set; } = default!;
+
+}

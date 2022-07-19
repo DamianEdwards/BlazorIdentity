@@ -1,9 +1,12 @@
 ﻿@page "/Account/Email"
 
+@using BlazorIdentity.ServerApp.Data
+
 <PageTitle>Manage email</PageTitle>
 
+<h1>Manage Email</h1>
 
-
+<BlazorIdentity.UI.Manage.Email TUser="AppUser" />
 @code {
 
 }

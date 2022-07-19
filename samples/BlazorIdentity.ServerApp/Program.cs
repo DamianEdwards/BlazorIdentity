@@ -15,7 +15,9 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
-builder.Services.AddBlazorServerIdentity<AppUser, IdentityRole>(options => options.SignIn.RequireConfirmedAccount = false)
+var expiryTimeSpan = builder.Configuration.GetValue<int>("CookieExpiryTimeSpanInMinutes");
+
+builder.Services.AddBlazorServerIdentity<AppUser, IdentityRole>(options => options.SignIn.RequireConfirmedAccount = false, expiryTimeSpan)
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders();
 
