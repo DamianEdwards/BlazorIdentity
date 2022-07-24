@@ -34,7 +34,13 @@
         alertMessage = "Personal data has been downloaded";
         alert?.Open();
 
-        string contentType = "application/octet-stream";
-        await JS.InvokeVoidAsync("BlazorDownloadFile", "PersonalData.json", contentType, JsonSerializer.SerializeToUtf8Bytes(personalData));
+        var deserializedContent = JsonSerializer.SerializeToUtf8Bytes(personalData);
+        var fileStream = new MemoryStream(deserializedContent);
+
+        var fileName = "PersonalData.json";
+
+        using var streamRef = new DotNetStreamReference(stream: fileStream);
+
+        await JS.InvokeVoidAsync("downloadFileFromStream", fileName, streamRef);
     }
 }
