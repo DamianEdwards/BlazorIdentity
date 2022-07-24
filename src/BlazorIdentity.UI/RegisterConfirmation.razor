@@ -1,6 +1,5 @@
 ﻿@typeparam TUser where TUser : class
 
-@using Microsoft.AspNetCore.WebUtilities
 @using System.Text
 @using System.Text.Encodings.Web
 
@@ -31,41 +30,41 @@ else
 
 @code {
 
-	private IBlazorUserEmailStore<TUser>? emailStore;
+    private IBlazorUserEmailStore<TUser>? emailStore;
 
-	[Parameter]
-	public string Email { get; set; } = default!;
+    [Parameter]
+    public string Email { get; set; } = default!;
 
-	public bool EmailNotFound { get; set; } = false;
+    public bool EmailNotFound { get; set; } = false;
 
-	public bool DisplayConfirmAccountLink { get; set; }
+    public bool DisplayConfirmAccountLink { get; set; }
 
-	public string EmailConfirmationUrl { get; set; } = string.Empty;
+    public string EmailConfirmationUrl { get; set; } = string.Empty;
 
-	protected override async Task OnInitializedAsync()
-	{
-		if (!UserManager.SupportsUserEmail)
-		{
-			throw new NotSupportedException("The UI requires a user store with email support.");
-		}
+    protected override async Task OnInitializedAsync()
+    {
+        if (!UserManager.SupportsUserEmail)
+        {
+            throw new NotSupportedException("The UI requires a user store with email support.");
+        }
 
-		emailStore = (IBlazorUserEmailStore<TUser>)UserStore;
+        emailStore = (IBlazorUserEmailStore<TUser>)UserStore;
 
-		var user = await UserManager.FindByEmailAsync(Email);
+        var user = await UserManager.FindByEmailAsync(Email);
 
-		if (user is null)
-		{
-			EmailNotFound = true;
-			StateHasChanged();
-			return;
-		}
-		// Once you add a real email sender, you should remove this code that lets you confirm the account
-		DisplayConfirmAccountLink = true;
-		if (DisplayConfirmAccountLink)
-		{
-			var userId = await UserManager.GetUserIdAsync(user);
-			var code = await UserManager.GenerateEmailConfirmationTokenAsync(user);
-			code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+        if (user is null)
+        {
+            EmailNotFound = true;
+            StateHasChanged();
+            return;
+        }
+        // Once you add a real email sender, you should remove this code that lets you confirm the account
+        DisplayConfirmAccountLink = true;
+        if (DisplayConfirmAccountLink)
+        {
+            var userId = await UserManager.GetUserIdAsync(user);
+            var code = await UserManager.GenerateEmailConfirmationTokenAsync(user);
+            code = System.Web.HttpUtility.UrlEncode(Encoding.UTF8.GetBytes(code));
 
 			EmailConfirmationUrl = $"/account/ConfirmEmail/{userId}/{code}";
 		}

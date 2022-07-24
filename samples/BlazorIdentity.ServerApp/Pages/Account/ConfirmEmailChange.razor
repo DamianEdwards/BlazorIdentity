@@ -8,7 +8,14 @@
 
 <h1>Confirm email change</h1>
 
-<BlazorIdentity.UI.ConfirmEmailChange TUser="AppUser" UserId="@UserId" Email="@Email" Code="@Code" />
+@if (!string.IsNullOrEmpty(alertMessage))
+{
+    <BSAlert @ref="@alert" Color="BSColor.Success" IsDismissible="true">
+        @alertMessage
+    </BSAlert>
+}
+
+<BlazorIdentity.UI.ConfirmEmailChange OnShowMessage="HandleMessage" TUser="AppUser" UserId="@UserId" Email="@Email" Code="@Code" />
 
 @code {
 	[Parameter]
@@ -18,6 +25,9 @@
 	[Parameter]
 	public string Code { get; set; } = string.Empty;
 
+    private BSAlert? alert;
+    private string? alertMessage;
+
 	protected override void OnInitialized()
 	{
 		if (string.IsNullOrEmpty(UserId) || string.IsNullOrEmpty(Email) || string.IsNullOrEmpty(Code))
@@ -25,4 +35,10 @@
 			NavManager.NavigateTo("/");	
 		}
 	}
+
+    private void HandleMessage(string message)
+    {
+        alertMessage = message;
+        alert?.Open();
+    }
 }

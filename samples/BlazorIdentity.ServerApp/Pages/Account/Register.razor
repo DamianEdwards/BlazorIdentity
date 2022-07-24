@@ -6,7 +6,7 @@
 
 <PageTitle>Register</PageTitle>
 
-<h3>Register</h3>
+<h1>Register</h1>
 
 <BlazorIdentity.UI.Register TUser="AppUser" OnRegistered="HandleRegistered" ReturnUrl="@ReturnUrl" />
 
@@ -23,7 +23,7 @@
     {
         if (requireConfirmedAccount)
         {
-            // TODO: Handle account confirmation
+            NavManager.NavigateTo($"/Account/RegisterConfirmation?ReturnUrl={ReturnUrl}");
         }
         else
         {

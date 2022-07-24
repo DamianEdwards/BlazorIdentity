@@ -36,6 +36,9 @@
     [CascadingParameter]
     private Task<AuthenticationState> authenticationStateTask { get; set; } = default!;
 
+    [Parameter]
+    public EventCallback OnPersonalDataDeleted { get; set; }
+
     public string StatusMessage { get; set; } = string.Empty;
 
     public bool RequirePassword { get; set; }
@@ -43,6 +46,27 @@
     private EditContext? editContext;
     private ReEnterPasswordModel reEnterPasswordModel = new();
     private ValidationMessageStore? messageStore;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        editContext = new(reEnterPasswordModel);
+        messageStore = new(editContext);
+
+        var authState = await authenticationStateTask;
+
+        var user = await UserManager.GetUserAsync(authState.User);
+
+        if (user is null)
+        {
+            StatusMessage = $"Unable to load user data";
+            StateHasChanged();
+            return;
+        }
+
+        RequirePassword = await UserManager.HasPasswordAsync(user!);
+        StateHasChanged();
+    }
 
     private async Task HandleDeleteData()
     {
@@ -77,27 +101,7 @@
         {
             await SignInManager.SignOutAsync();
         }
-        NavManager.NavigateTo("/");
-    }
-
-    protected override async Task OnInitializedAsync()
-    {
-        editContext = new(reEnterPasswordModel);
-        messageStore = new(editContext);
-
-        var authState = await authenticationStateTask;
-
-        var user = await UserManager.GetUserAsync(authState.User);
-
-        if (user is null)
-        {
-            StatusMessage = $"Unable to load user data";
-            StateHasChanged();
-            return;
-        }
-
-        RequirePassword = await UserManager.HasPasswordAsync(user!);
-        StateHasChanged();
+        await OnPersonalDataDeleted.InvokeAsync();
     }
 
     public class ReEnterPasswordModel

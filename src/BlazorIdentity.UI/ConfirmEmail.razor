@@ -1,7 +1,5 @@
 ﻿@typeparam TUser where TUser : class
 
-@using Microsoft.AspNetCore.WebUtilities
-@using Microsoft.JSInterop
 @using System.Text
 @using System.Text.Encodings.Web
 
@@ -9,23 +7,16 @@
 @inject IBlazorUserManager<TUser> UserManager
 @inject IBlazorUserStore<TUser> UserStore
 @inject IBlazorEmailSender EmailSender
-@inject IJSRuntime js
-@inject NavigationManager NavManager
-
-
-<div hidden id="myAlert">
-	<div class="alert alert-success alert-dismissable fade show">
-		@StatusMessage
-		<button type="button" style="float: right;" class="btn-close" @onclick="@DismissAlert" aria-label="Close"></button>
-	</div>
-</div>
 
 @code {
-	[Parameter]
-	public string UserId { get; set; } = default!;
+    [Parameter]
+    public string UserId { get; set; } = default!;
 
-	[Parameter]
-	public string ConfirmationCode { get; set; } = string.Empty;
+    [Parameter]
+    public string ConfirmationCode { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<string> OnConfirmEmailSent { get; set; }
 
 	public string StatusMessage { get; set; } = string.Empty;
 
@@ -33,32 +24,19 @@
 	{
 		if (UserId == null || ConfirmationCode == null)
 		{
-			NavManager.NavigateTo("/");
+            throw new InvalidOperationException("Unexpected failure when validating parameters.");
 		}
+
 		var user = await UserManager.FindByIdAsync(UserId!);
 
 		if (user == null)
 		{
-			StatusMessage = $"Unable to load user with ID {UserId}";
-			ShowAlert();
-			StateHasChanged();
-			return;
+            throw new InvalidOperationException("Unexpected failure when loading user.");
 		}
-		ConfirmationCode = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(ConfirmationCode));
+
+		ConfirmationCode = System.Web.HttpUtility.UrlDecode(ConfirmationCode!, System.Text.Encoding.UTF8);
 		var result = await UserManager.ConfirmEmailAsync(user, ConfirmationCode);
 		StatusMessage = result.Succeeded ? "Thank you for confirming your email." : "Error confirming your email.";
-		ShowAlert();
-		StateHasChanged();
+        await OnConfirmEmailSent.InvokeAsync(StatusMessage);
 	}
-
-	public async void ShowAlert()
-	{
-		await js.InvokeVoidAsync("ShowAlert", "myAlert");
-	}
-
-	public async void DismissAlert()
-	{
-		await js.InvokeVoidAsync("DismissAlert", "myAlert");
-	}
-
 }

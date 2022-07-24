@@ -4,7 +4,7 @@
 @inject IBlazorSignInManager<TUser> SignInManager
 @inject IBlazorUserManager<TUser> UserManager
 @inject ILogger<LoginWith2fa<TUser>> logger
-@inject NavigationManager NavManager
+
 
 <hr />
 <p>Your login is protected with an authenticator app. Enter your authenticator code below.</p>
@@ -28,8 +28,9 @@
         </div>
     </EditForm>
 <p>
-    Don't have access to your authenticator device? You can
-    <a id="recovery-code-login" href="/Account/LoginWithRecoveryCode">log in with a recovery code</a>.
+    Don't have access to your authenticator device? You can log in with a recovery code.
+    <!-- In Core Identity scaffolded code there would be a link to LoginWithRecoveryCode. 
+        Per feedback, this needs to be looked into further. -->
 </p>
 
 @code {
@@ -39,6 +40,9 @@
 
     [Parameter]
     public EventCallback OnLogin { get; set; }
+
+    [Parameter]
+    public EventCallback OnLockedOut { get; set; }
 
     [Parameter]
     public bool RememberMe { get; set; }
@@ -66,7 +70,7 @@
         var authenticatorCode = loginModel.TwoFactorCode.Replace(" ", string.Empty).Replace("-", string.Empty);
 
         var result = await SignInManager.TwoFactorAuthenticatorSignInAsync(authenticatorCode, RememberMe, loginModel.RememberMachine);
-        
+
         var userId = await UserManager.GetUserIdAsync(user);
 
         if (result.Succeeded)
@@ -77,7 +81,7 @@
         if (result.IsLockedOut)
         {
             logger.LogWarning("User with ID '{UserId}' account locked out.", userId);
-            NavManager.NavigateTo("/Account/Lockout");
+            await OnLockedOut.InvokeAsync();
         }
         else
         {

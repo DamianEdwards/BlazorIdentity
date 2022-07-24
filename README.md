@@ -31,7 +31,6 @@ Currently supports the following operations in Blazor Server apps:
 **NOTE**: Several of the above require configuring a 3rd party provider such as Twillio or SendGrid for full testing and use.
 
 **Also fixed:**
- - A dependency on Microsoft.AspNetCore.Identity that snuck into the BlazorIdentity project.
  - LaunchSettings.json files that got created in BlazorIdentity and BlazorIdentity.Server projects.
  - Cleaned out a <remove> entry in the project file of BlazorIdentity.ServerApp.
 

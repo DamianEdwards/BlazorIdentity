@@ -43,49 +43,55 @@
 @* TODO: Show progress UI while logging in? *@
 
 @code {
-	private EditContext? editContext;
-	private LoginModel loginModel = new();
-	private ValidationMessageStore? messageStore;
+    private EditContext? editContext;
+    private LoginModel loginModel = new();
+    private ValidationMessageStore? messageStore;
 
-	[Parameter]
-	public EventCallback OnLogin { get; set; }
+    [Parameter]
+    public EventCallback OnLogin { get; set; }
 
-	[Parameter]
-	public string ReturnUrl { get; set; } = default!;
+    [Parameter]
+    public EventCallback<bool> OnRequiresTwoFactor { get; set; }
 
-	[Parameter]
-	public string FailureMessage { get; set; } = "Login failed. Please check the email address and password.";
+    [Parameter]
+    public EventCallback OnLockedOut { get; set; }
 
-	protected override void OnInitialized()
-	{
-		editContext = new(loginModel);
-		messageStore = new(editContext);
-		ReturnUrl = ReturnUrl ?? "/";
-	}
+    [Parameter]
+    public string ReturnUrl { get; set; } = default!;
 
-	private async Task HandleSubmit()
-	{
-		messageStore?.Clear();
+    [Parameter]
+    public string FailureMessage { get; set; } = "Login failed. Please check the email address and password.";
 
-		if (editContext?.Validate() != true)
-		{
-			return;
-		}
+    protected override void OnInitialized()
+    {
+        editContext = new(loginModel);
+        messageStore = new(editContext);
+        ReturnUrl = ReturnUrl ?? "/";
+    }
 
-		var result = await SignInManager.PasswordSignInAsync(loginModel.Email!, loginModel.Password!, loginModel.RememberMe, lockoutOnFailure: false);
-		if (result.Succeeded)
-		{
-			logger.LogWarning("User {user} logged in successfully", loginModel.Email);
-			await OnLogin.InvokeAsync();
-		}
-		if (result.RequiresTwoFactor)
-		{
-			NavManager.NavigateTo($"/Account/LoginWith2fa?RememberMe={loginModel.RememberMe}&ReturnUrl={ReturnUrl}");
-		}
-		if (result.IsLockedOut)
-		{
-			logger.LogWarning("User {Email} locked out.", loginModel.Email);
-			NavManager.NavigateTo("/Account/LockOut");
+    private async Task HandleSubmit()
+    {
+        messageStore?.Clear();
+
+        if (editContext?.Validate() != true)
+        {
+            return;
+        }
+
+        var result = await SignInManager.PasswordSignInAsync(loginModel.Email!, loginModel.Password!, loginModel.RememberMe, lockoutOnFailure: false);
+        if (result.Succeeded)
+        {
+            logger.LogWarning("User {user} logged in successfully", loginModel.Email);
+            await OnLogin.InvokeAsync();
+        }
+        if (result.RequiresTwoFactor)
+        {
+            await OnRequiresTwoFactor.InvokeAsync(loginModel.RememberMe);
+        }
+        if (result.IsLockedOut)
+        {
+            logger.LogWarning("User {Email} locked out.", loginModel.Email);
+            await OnLockedOut.InvokeAsync();
 		}
 		else
 		{

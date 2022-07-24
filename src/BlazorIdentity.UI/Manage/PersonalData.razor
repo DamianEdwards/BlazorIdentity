@@ -1,7 +1,6 @@
 ﻿@typeparam TUser where TUser : class
 
 @inject IBlazorUserManager<TUser> UserManager
-@inject NavigationManager NavManager
 
 <div class="row">
 	<div class="col md-6">
@@ -10,10 +9,10 @@
 			<strong>Deleting this data will permanently remove your account, and this cannot be recovered.</strong>
 		</p>
 		<p>
-			<button class="btn btn-primary" onclick="@(() => NavManager.NavigateTo("/Account/DownloadPersonalData"))">Download</button>
+            <button class="btn btn-primary" onclick="@(() => DownloadPersonalData())">Download</button>
 		</p>
 		<p>
-			<button class="btn btn-danger" onclick="@(() => NavManager.NavigateTo("/Account/DeletePersonalData"))">Delete</button>
+			<button class="btn btn-danger" onclick="@(() => DeletePersonalData())">Delete</button>
 		</p>
 	</div>
 
@@ -21,4 +20,19 @@
 
 @code {
 
+    [Parameter]
+    public EventCallback OnDownloadPersonalData { get; set; }
+
+    [Parameter]
+    public EventCallback OnDeletPersonalData { get; set; }
+
+    private async void DeletePersonalData()
+    {
+        await OnDeletPersonalData.InvokeAsync();
+    }
+
+    private async void DownloadPersonalData()
+    {
+        await OnDownloadPersonalData.InvokeAsync();
+    }
 }

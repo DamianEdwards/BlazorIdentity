@@ -3,25 +3,30 @@
 @using BlazorIdentity.Server;
 @using BlazorIdentity.ServerApp.Data
 
-@inject NavigationManager Navigation
+@inject NavigationManager NavManager
 
 <PageTitle>Recovery code verification</PageTitle>
 
 <h1>Recovery code verification</h1>
 
-<BlazorIdentity.UI.LoginWithRecoveryCode TUser="AppUser" OnLogin="HandleLogin" ReturnUrl="@ReturnUrl" />
+<BlazorIdentity.UI.LoginWithRecoveryCode TUser="AppUser" OnLogin="HandleLogin" OnLockedOut="HandleLockedOut" ReturnUrl="@ReturnUrl" />
 
 @code {
-	public string ReturnUrl { get; set; } = default!;
+    public string ReturnUrl { get; set; } = default!;
 
     protected override void OnInitialized()
     {
-		Navigation.TryGetQueryString<string>("ReturnUrl", out var returnUrl);
+        NavManager.TryGetQueryString<string>("ReturnUrl", out var returnUrl);
         ReturnUrl = !string.IsNullOrEmpty(returnUrl) ? returnUrl : "/";
     }
 
-	private void HandleLogin()
-	{
-		Navigation.NavigateTo(ReturnUrl);
-	}
+    private void HandleLogin()
+    {
+        NavManager.NavigateTo(ReturnUrl);
+    }
+
+    private void HandleLockedOut()
+    {
+        NavManager.NavigateTo("/Account/LockedOut");
+    }
 }

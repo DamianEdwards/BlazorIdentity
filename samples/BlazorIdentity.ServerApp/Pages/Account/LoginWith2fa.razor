@@ -2,13 +2,13 @@
 
 @using BlazorIdentity.ServerApp.Data
 
-@inject NavigationManager Navigation
+@inject NavigationManager NavManager
 
 <PageTitle>Two-factor authentication</PageTitle>
 
 <h1>Two-factor authentication</h1>
 
-<BlazorIdentity.UI.LoginWith2fa TUser="AppUser" RememberMe="@RememberMe" ReturnUrl="@ReturnUrl" OnLogin="HandleLogin" />
+<BlazorIdentity.UI.LoginWith2fa TUser="AppUser" RememberMe="@RememberMe" ReturnUrl="@ReturnUrl" OnLogin="HandleLogin" OnLockedOut="HandleLockedOut" />
 
 @code {
 
@@ -20,7 +20,12 @@
 
 	private void HandleLogin()
 	{
-		Navigation.NavigateTo(ReturnUrl);
+        NavManager.NavigateTo(ReturnUrl);
 	}
+
+    private void HandleLockedOut()
+    {
+        NavManager.NavigateTo("/Account/Lockedout");
+    }
 
 }

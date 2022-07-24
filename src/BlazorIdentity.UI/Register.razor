@@ -4,9 +4,7 @@
 @inject IBlazorUserManager<TUser> UserManager
 @inject IBlazorUserStore<TUser> UserStore
 @inject IBlazorEmailSender EmailSender
-@inject NavigationManager NavManager
 
-@using Microsoft.AspNetCore.WebUtilities
 @using System.Text
 @using System.Text.Encodings.Web
 
@@ -81,7 +79,7 @@
 
             // TODO: Generate & send email confirmation stuff
             var code = await UserManager.GenerateEmailConfirmationTokenAsync(user);
-            code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+            code = System.Web.HttpUtility.UrlEncode(Encoding.UTF8.GetBytes(code));
 
             var url = $"/account/register?userid={userId}&code={code}";
 
@@ -90,7 +88,7 @@
                 await EmailSender.SendEmailAsync(registerModel.Email!, "Confirm your email",
                 $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(url)}'>clicking here</a>.");
 
-                NavManager.NavigateTo($"/Account/RegisterConfirmation/{registerModel.Email}");
+                await OnRegistered.InvokeAsync(true);
             }
             else
             {

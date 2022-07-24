@@ -29,4 +29,6 @@ public interface IBlazorUserManager<TUser> where TUser : class
     Task<IdentityResult> ChangePasswordAsync(TUser user, string currentPassword, string newPassword);
     Task<IdentityResult> ChangeEmailAsync(TUser user, string email, string code);
     Task<IdentityResult> ChangeUserNameAsync(TUser user, string userName);
+    Dictionary<string, string> GetPersonalData(TUser user);
+
 }

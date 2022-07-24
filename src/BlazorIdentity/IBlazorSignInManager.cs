@@ -14,7 +14,7 @@ public interface IBlazorSignInManager<TUser> where TUser : class
     Task<SignInResult> TwoFactorRecoveryCodeSignInAsync(string recoveryCode);
 
 	Task SignInAsync(TUser user, bool isPersistent, string? authenticationMethod = null);
-
+    
     bool IsSignedIn(ClaimsPrincipal user);
 
     Task SignOutAsync();

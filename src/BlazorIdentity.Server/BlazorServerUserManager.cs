@@ -72,6 +72,19 @@ internal class BlazorServerUserManager<TUser> : IBlazorUserManager<TUser> where 
 	public async Task<IdentityResult> ChangePasswordAsync(TUser user, string currentPassword, string newPassword)
         => ToBlazorIdentityResult(await _userManager.ChangePasswordAsync(user, currentPassword, newPassword));
 
+    public Dictionary<string, string> GetPersonalData(TUser user)
+    {
+        var personalData = new Dictionary<string, string>();
+        var personalDataProps = typeof(TUser).GetProperties().Where(
+            prop => Attribute.IsDefined(prop, typeof(PersonalDataAttribute)));
+
+        foreach (var prop in personalDataProps)
+        {
+            personalData.Add(prop.Name, prop.GetValue(user)?.ToString() ?? string.Empty);
+        }
+        return personalData;
+    }
+
     private static IdentityResult ToBlazorIdentityResult(Identity.IdentityResult result)
     {
         return result.Succeeded switch

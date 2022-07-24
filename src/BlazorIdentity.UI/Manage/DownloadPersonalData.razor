@@ -1,6 +1,5 @@
 ﻿@typeparam TUser where TUser : class
 
-@using Microsoft.AspNetCore.Identity
 @using Microsoft.Extensions.Logging
 @using Microsoft.JSInterop
 @using System.Text.Json
@@ -10,67 +9,44 @@
 @inject IJSRuntime js
 @inject ILogger<DownloadPersonalData<TUser>> logger
 
-<div hidden id="myAlert">
-	<div class="alert alert-success alert-dismissable fade show">
-		@StatusMessage
-		<button type="button" style="float: right;" class="btn-close" @onclick="@DismissAlert" aria-label="Close"></button>
-	</div>
-</div>
-
 @code {
-	[CascadingParameter]
-	private Task<AuthenticationState> authenticationStateTask { get; set; } = default!;
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; } = default!;
 
-	public string StatusMessage { get; set; } = string.Empty;
+    [Parameter]
+    public EventCallback<Dictionary<string,string>> OnDownloadPersonalData { get; set; }
 
-	protected override async Task OnInitializedAsync()
-	{
-		var authState = await authenticationStateTask;
+//    public string StatusMessage { get; set; } = string.Empty;
 
-		var user = await UserManager.GetUserAsync(authState.User);
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await authenticationStateTask;
 
-		if (user is null)
-		{
-			StatusMessage = $"Unable to load user data";
-			StateHasChanged();
-			return;
-		}
-		
-		logger.LogWarning("User with ID {UserId} asked for their personal data.", UserManager.GetUserIdAsync(user));
+        var user = await UserManager.GetUserAsync(authState.User);
 
-		var personalData = new Dictionary<string, string>();
-		var personalDataProps = typeof(TUser).GetProperties().Where(
-			prop => Attribute.IsDefined(prop, typeof(PersonalDataAttribute)));
+        if (user is null)
+        {
+            throw new InvalidOperationException("Unexpected failure when loading user.");
+        }
 
-		foreach(var p in personalDataProps)
-		{
-			personalData.Add(p.Name, p.GetValue(user)?.ToString() ?? "null");
-		}
-		var logins = await UserManager.GetLoginsAsync(user!);
-		foreach(var l in logins)
-		{
-			personalData.Add($"{l.LoginProvider} external login provider key", l.ProviderKey);
-		}
-		var key = await UserManager.GetAuthenticatorKeyAsync(user!);
-		personalData.Add($"Authenticator Key", key ?? "null");
-		
-		string contentType = "application/octet-stream";
+        logger.LogWarning("User with ID {UserId} asked for their personal data.", UserManager.GetUserIdAsync(user));
 
-		await js.InvokeVoidAsync("BlazorDownloadFile", "PersonalData.json", contentType, JsonSerializer.SerializeToUtf8Bytes(personalData));
-		StatusMessage = "Personal data has been downloaded.";
-		ShowAlert();
-		StateHasChanged();
+        var personalData = new Dictionary<string, string>();
+        var personalDataProps = UserManager.GetPersonalData(user);
+
+        foreach(var p in personalDataProps)
+        {
+            personalData.Add(p.Key, p.Value);
+        }
+        var logins = await UserManager.GetLoginsAsync(user!);
+
+        foreach(var l in logins)
+        {
+            personalData.Add($"{l.LoginProvider} external login provider key", l.ProviderKey);
+        }
+        var key = await UserManager.GetAuthenticatorKeyAsync(user!);
+        personalData.Add($"Authenticator Key", key ?? "null");
+
+        await OnDownloadPersonalData.InvokeAsync(personalData);
 	}
-
-	public async void ShowAlert()
-	{
-		await js.InvokeVoidAsync("ShowAlert", "myAlert");
-	}
-
-
-	public async void DismissAlert()
-	{
-		await js.InvokeVoidAsync("DismissAlert", "myAlert");
-	}
-
 }

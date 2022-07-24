@@ -2,12 +2,23 @@
 
 @using BlazorIdentity.ServerApp.Data
 
+@inject NavigationManager NavManager
+
 <PageTitle>Personal data</PageTitle>
 
-<h3>Personal Data</h3>
+<h1>Personal Data</h1>
 
-<BlazorIdentity.UI.Manage.PersonalData TUser="AppUser" />
+<BlazorIdentity.UI.Manage.PersonalData TUser="AppUser" OnDeletPersonalData="HandleDeletePersonalData" OnDownloadPersonalData="HandleDownloadPersonalData" />
 
 @code {
 
+    private void HandleDeletePersonalData()
+    {
+        NavManager.NavigateTo("/Account/DeletePersonalData");
+    }
+
+    private void HandleDownloadPersonalData()
+    {
+        NavManager.NavigateTo("/Account/DownloadPersonalData");
+    }
 }

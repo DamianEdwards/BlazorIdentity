@@ -4,7 +4,6 @@
 @inject IBlazorSignInManager<TUser> SignInManager
 @inject IBlazorUserManager<TUser> UserManager
 @inject ILogger<LoginWithRecoveryCode<TUser>> logger
-@inject NavigationManager NavManager
 
 <hr />
 
@@ -41,16 +40,9 @@
     public EventCallback OnLogin { get; set; }
 
     [Parameter]
+    public EventCallback OnLockedOut { get; set; }
+
     public string FailureMessage { get; set; } = "Invalid recovery code entered.";
-
-
-    public class LoginModel
-    {
-        [Required]
-        [DataType(DataType.Text)]
-        [Display(Name = "Recovery Code")]
-        public string RecoveryCode { get; set; } = default!;
-    }
 
     protected override void OnInitialized()
     {
@@ -88,7 +80,7 @@
         if (result.IsLockedOut)
         {
             logger.LogWarning("User account locked out.");
-            NavManager.NavigateTo("/Account/Lockout");
+            await OnLockedOut.InvokeAsync();
         }
         else
         {
@@ -96,5 +88,13 @@
             messageStore?.Add(() => loginModel, FailureMessage);
             editContext.NotifyValidationStateChanged();
         }
+    }
+
+    public class LoginModel
+    {
+        [Required]
+        [DataType(DataType.Text)]
+        [Display(Name = "Recovery Code")]
+        public string RecoveryCode { get; set; } = default!;
     }
 }

@@ -1,7 +1,6 @@
 ﻿@typeparam TUser where TUser : class
 
 @using Microsoft.Extensions.Logging
-@using Microsoft.AspNetCore.WebUtilities
 @using System.Text
 @using System.Text.Encodings.Web
 
@@ -32,48 +31,49 @@
 </div>
 
 @code {
-	private EditContext? editContext;
-	private ResendEmailModel resendEmailModel = new();
-	private ValidationMessageStore? messageStore;
+    private EditContext? editContext;
+    private ResendEmailModel resendEmailModel = new();
+    private ValidationMessageStore? messageStore;
 
-	[Parameter]
-	public string FailureMessage { get; set; } = "Verification email sent. Please check your email.";
+    private string StatusMessage = "Verification email sent. Please check your email.";
 
-	protected override void OnInitialized()
-	{
-		editContext = new(resendEmailModel);
-		messageStore = new(editContext);
-	}
+    [Parameter]
+    public EventCallback<string> OnEmailSent { get; set; }
 
-	private async Task HandleSubmit()
-	{
-		messageStore?.Clear();
+    protected override void OnInitialized()
+    {
+        editContext = new(resendEmailModel);
+        messageStore = new(editContext);
+    }
 
-		if (editContext?.Validate() != true)
-		{
-			return;
-		}
-		var user = await UserManager.FindByEmailAsync(resendEmailModel.Email);
+    private async Task HandleSubmit()
+    {
+        messageStore?.Clear();
 
-		if (user == null)
-		{
-			messageStore?.Add(() => resendEmailModel, FailureMessage);
-			editContext.NotifyValidationStateChanged();
-			return;
-		}
+        if (editContext?.Validate() != true)
+        {
+            return;
+        }
+        var user = await UserManager.FindByEmailAsync(resendEmailModel.Email);
 
-		var userId = UserManager.GetUserIdAsync(user);
-		var code = await UserManager.GenerateEmailConfirmationTokenAsync(user);
-		code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+        if (user == null)
+        {
+            messageStore?.Add(() => resendEmailModel, "Error re-sending confirmation email.");
+            editContext.NotifyValidationStateChanged();
+            return;
+        }
 
-		var url = $"/Account/ConfirmEmail/{userId}/{code}";
+        var userId = UserManager.GetUserIdAsync(user);
+        var code = await UserManager.GenerateEmailConfirmationTokenAsync(user);
+        code = System.Web.HttpUtility.UrlEncode(Encoding.UTF8.GetBytes(code));
 
-		await EmailSender.SendEmailAsync(resendEmailModel.Email, 
-			"Confirm your email",
-			$"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(url)}'>clicking here</a>.");
+        var url = $"/Account/ConfirmEmail/{userId}/{code}";
 
-		messageStore?.Add(() => resendEmailModel, FailureMessage);
-		editContext.NotifyValidationStateChanged();
+        await EmailSender.SendEmailAsync(resendEmailModel.Email, 
+            "Confirm your email",
+            $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(url)}'>clicking here</a>.");
+
+        await OnEmailSent.InvokeAsync(StatusMessage);
 	}
 
 	public class ResendEmailModel

@@ -14,8 +14,6 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="7.0.0-preview.7.22330.6" />
     <PackageReference Include="Microsoft.AspNetCore.Components.Authorization" Version="7.0.0-preview.7.22330.6" />
-    <PackageReference Include="Microsoft.AspNetCore.Identity" Version="2.2.0" />
-    <PackageReference Include="Microsoft.AspNetCore.WebUtilities" Version="2.2.0" />
   </ItemGroup>
 
   <ItemGroup>

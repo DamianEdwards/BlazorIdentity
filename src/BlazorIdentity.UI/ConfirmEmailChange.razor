@@ -2,51 +2,42 @@
 
 @using System.Text
 @using System.Text.Encodings.Web
-@using Microsoft.AspNetCore.WebUtilities
-@using Microsoft.JSInterop
 
 @inject IBlazorUserManager<TUser> UserManager
 @inject IBlazorSignInManager<TUser> SignInManager
 @inject IBlazorUserStore<TUser> UserStore
-@inject IJSRuntime js
-
-<div hidden id="myAlert">
-	<div class="alert alert-success alert-dismissable fade show">
-		@StatusMessage
-		<button type="button" style="float: right;" class="btn-close" @onclick="@DismissAlert" aria-label="Close"></button>
-	</div>
-</div>
 
 
 @code {
-	[Parameter]
-	public string UserId { get; set; } = string.Empty;
-	[Parameter]
-	public string Email { get; set; } = string.Empty;
-	[Parameter]
-	public string Code { get; set; } = string.Empty;
+    [Parameter]
+    public string UserId { get; set; } = string.Empty;
+    [Parameter]
+    public string Email { get; set; } = string.Empty;
+    [Parameter]
+    public string Code { get; set; } = string.Empty;
+    [Parameter]
+    public EventCallback<string> OnShowMessage { get; set; }
 
-	public string StatusMessage { get; set; } = string.Empty;
+    public string StatusMessage { get; set; } = string.Empty;
 
-	private IBlazorUserEmailStore<TUser>? emailStore;
+    private IBlazorUserEmailStore<TUser>? emailStore;
 
-	protected override async Task OnInitializedAsync()
-	{
-		emailStore = (IBlazorUserEmailStore<TUser>) UserStore;
+    protected override async Task OnInitializedAsync()
+    {
+        emailStore = (IBlazorUserEmailStore<TUser>) UserStore;
 
-		var user = await UserManager.FindByIdAsync(UserId);
-		Code = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(Code));
-		Email = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(Email));
+        var user = await UserManager.FindByIdAsync(UserId);
+        Code = System.Web.HttpUtility.UrlDecode(Code!, System.Text.Encoding.UTF8);
+        Email = System.Web.HttpUtility.UrlDecode(Email!, System.Text.Encoding.UTF8);
 
-		// NOTE: Went with this new call from UserManager since EmailStore.SetEmailAsync does not provide for
-		// matching up the token
-		var result = await UserManager.ChangeEmailAsync(user!, Email, Code);
+        // NOTE: Went with this new call from UserManager since EmailStore.SetEmailAsync does not provide for
+        // matching up the token
+        var result = await UserManager.ChangeEmailAsync(user!, Email, Code);
 
-		if (!result.Succeeded)
-		{
-			StatusMessage = "Error changing email.";
-			ShowAlert();
-			StateHasChanged();
+        if (!result.Succeeded)
+        {
+            StatusMessage = "Error changing email.";
+            await OnShowMessage.InvokeAsync(StatusMessage);
 			return;
 		}
 
@@ -60,24 +51,12 @@
 		if (!setUserNameResult.Succeeded)
 		{
 			StatusMessage = "Error changing user name.";
-			ShowAlert();
-			StateHasChanged();
+            await OnShowMessage.InvokeAsync(StatusMessage);
 			return;
 		}
 
 		await SignInManager.RefreshSignInAsync(user!);
 		StatusMessage = "Thank you for confirming your email change.";
-		ShowAlert();
-		StateHasChanged();
-	}
-
-	public async void ShowAlert()
-	{
-		await js.InvokeVoidAsync("ShowAlert", "myAlert");
-	}
-
-	public async void DismissAlert()
-	{
-		await js.InvokeVoidAsync("DismissAlert", "myAlert");
+        await OnShowMessage.InvokeAsync(StatusMessage);
 	}
 }

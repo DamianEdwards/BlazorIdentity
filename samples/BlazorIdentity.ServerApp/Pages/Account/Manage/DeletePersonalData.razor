@@ -2,12 +2,18 @@
 
 @using BlazorIdentity.ServerApp.Data
 
+@inject NavigationManager NavManager
+
 <PageTitle>Delete Personal Data</PageTitle>
 
 <h3>Delete Personal Data</h3>
 
-<BlazorIdentity.UI.Manage.DeletePersonalData TUser="AppUser" />
+<BlazorIdentity.UI.Manage.DeletePersonalData TUser="AppUser" OnPersonalDataDeleted="HandleDeletedPersonalData" />
 
 @code {
 
+    private void HandleDeletedPersonalData()
+    {
+        NavManager.NavigateTo("/");
+    }
 }

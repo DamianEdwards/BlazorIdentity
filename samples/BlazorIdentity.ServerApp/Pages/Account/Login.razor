@@ -10,7 +10,7 @@
 
 <h1>Log in</h1>
 
-<BlazorIdentity.UI.Login TUser="AppUser" OnLogin="HandleLogin" ReturnUrl="@ReturnUrl" />
+<BlazorIdentity.UI.Login TUser="AppUser" OnLogin="HandleLogin" OnLockedOut="HandleLockout" OnRequiresTwoFactor="HandleRequiresTwoFactor" ReturnUrl="@ReturnUrl" />
 
 @code {
     public string ReturnUrl { get; set; } = default!;
@@ -24,5 +24,15 @@
     private void HandleLogin()
     {
         NavManager.NavigateTo(ReturnUrl);
+    }
+
+    private void HandleLockout()
+    {
+        NavManager.NavigateTo("/Account/Lockout");
+    }
+
+    private void HandleRequiresTwoFactor(bool rememberMe)
+    {
+        NavManager.NavigateTo($"/Account/LoginWith2fa?RememberMe={rememberMe}&ReturnUrl={ReturnUrl}");
     }
 }
