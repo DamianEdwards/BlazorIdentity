@@ -1,4 +1,4 @@
-﻿@page "/Account/RegisterConfirmation/{email}"
+﻿@page "/Account/RegisterConfirmation/{email}/{returnUrl}"
 
 @using BlazorIdentity.ServerApp.Data
 
@@ -8,11 +8,14 @@
 
 <h3>Register Confirmation</h3>
 
-<BlazorIdentity.UI.RegisterConfirmation TUser="AppUser" Email="@email" />
+<BlazorIdentity.UI.RegisterConfirmation TUser="AppUser" Email="@email"  />
 
 @code {
 
-	[Parameter]
-	public string email { get; set; } = default!;
+    [Parameter]
+    public string email { get; set; } = default!;
+
+    [Parameter]
+    public string ReturnUrl { get; set; } = default!;
 
 }

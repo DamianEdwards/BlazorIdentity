@@ -19,15 +19,15 @@
         ReturnUrl = !string.IsNullOrEmpty(returnUrl) ? returnUrl : "/";
     }
 
-    private void HandleRegistered(bool requireConfirmedAccount)
+    private void HandleRegistered(RegisterResult result)
     {
-        if (requireConfirmedAccount)
+        if (result.RequireConfirmedAccount)
         {
-            NavManager.NavigateTo($"/Account/RegisterConfirmation?ReturnUrl={ReturnUrl}");
+            NavManager.NavigateTo($"/Account/RegisterConfirmation?Email={result.Email}&ReturnUrl={result.ReturnUrl}");
         }
         else
         {
-            NavManager.NavigateTo(ReturnUrl);
+            NavManager.NavigateTo(result.ReturnUrl);
         }
     }
 }
