@@ -21,8 +21,8 @@ internal class BlazorServerUserManager<TUser> : IBlazorUserManager<TUser> where 
 
     public IdentityOptions Options { get; }
 
-    public async Task<IList<UserLoginInfoResult>> GetLoginsAsync(TUser user) =>
-        ToBlazorUserLoginInfoResult((List<UserLoginInfo>) await _userManager.GetLoginsAsync(user));
+    public async Task<IList<UserLoginInfo>> GetLoginsAsync(TUser user) =>
+        ToBlazorUserLoginInfoResult((List<Identity.UserLoginInfo>) await _userManager.GetLoginsAsync(user));
 
     public Task<bool> HasPasswordAsync(TUser user) => _userManager.HasPasswordAsync(user);
 
@@ -94,12 +94,12 @@ internal class BlazorServerUserManager<TUser> : IBlazorUserManager<TUser> where 
         };
     }
 
-    private static IList<UserLoginInfoResult> ToBlazorUserLoginInfoResult(List<Identity.UserLoginInfo> results)
+    private static IList<UserLoginInfo> ToBlazorUserLoginInfoResult(List<Identity.UserLoginInfo> results)
     {
-        var userLoginInfos = new List<UserLoginInfoResult>();
+        var userLoginInfos = new List<UserLoginInfo>();
         foreach (var result in results)
         {
-            var userLoginInfo = new UserLoginInfoResult
+            var userLoginInfo = new UserLoginInfo
             {
                 LoginProvider = result.LoginProvider,
                 ProviderDisplayName = result.ProviderDisplayName!,

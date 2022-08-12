@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-public class UserLoginInfoResult
+public class UserLoginInfo
 {
 	public string LoginProvider { get; set; } = default!;
 	public string ProviderDisplayName { get; set; } = default!;

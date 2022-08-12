@@ -21,7 +21,7 @@ public interface IBlazorUserManager<TUser> where TUser : class
 	Task<string> GenerateEmailConfirmationTokenAsync(TUser user);
     Task<string> GenerateChangeEmailTokenAsync(TUser user, string newEmail);
 	Task<string?> GetUserNameAsync(TUser user);
-    Task<IList<UserLoginInfoResult>> GetLoginsAsync(TUser user);
+    Task<IList<UserLoginInfo>> GetLoginsAsync(TUser user);
     Task<string?> GetPhoneNumberAsync(TUser user);
     Task<string> GeneratePasswordResetTokenAsync(TUser user);
     Task<IdentityResult> ResetPasswordAsync(TUser user, string code, string password);
