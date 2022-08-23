@@ -1,0 +1,74 @@
+﻿@typeparam TUser where TUser : class
+
+@using Microsoft.Extensions.Logging
+@using System.Security.Claims
+@using System.Text
+@using System.Text.Encodings.Web
+@using System.Web
+
+@inject IBlazorSignInManager<TUser> SignInManager
+@inject ILogger<ExternalLoginCallback<TUser>> logger
+
+
+
+@code {
+
+    [Parameter]
+    public string ReturnUrl { get; set; } = string.Empty;
+
+    [Parameter]
+    public string RemoteError { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<string> OnHandleRegister { get; set; }
+
+    [Parameter]
+    public EventCallback<SignInResult> OnHandleLogin { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnHandleError { get; set; }
+
+    public string ErrorMessage { get; set; } = string.Empty;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!string.IsNullOrEmpty(RemoteError))
+        {
+            ErrorMessage = $"Error from external provider: {RemoteError}";
+            await OnHandleError.InvokeAsync(ErrorMessage);
+            return;
+        }
+
+        ReturnUrl = ReturnUrl ?? "/";
+
+        var info = await SignInManager.GetExternalLoginInfoAsync();
+
+        if (info == null)
+        {
+            ErrorMessage = $"Error loading external login information during confirmation.";
+            await OnHandleError.InvokeAsync(ErrorMessage);
+            return;
+        }
+
+        var result = await SignInManager.ExternalLoginSignInInAsync(info.LoginProviderName, info.ProviderKey, false, true);
+
+        if (result.Succeeded)
+        {
+            await OnHandleLogin.InvokeAsync(new SignInResult { Succeeded = true, ReturnUrl = ReturnUrl });
+            return;
+        }
+        if (result.IsLockedOut)
+        {
+            await OnHandleLogin.InvokeAsync(new SignInResult { IsLockedOut = true });
+            return;
+        }
+        else
+        {
+            // user does not have an account. Allow them to create one.
+            await OnHandleRegister.InvokeAsync(ReturnUrl);
+            return;
+        }
+
+    }
+}

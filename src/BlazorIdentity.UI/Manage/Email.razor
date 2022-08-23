@@ -81,7 +81,7 @@
         var email = await UserManager.GetUserEmailAsync(User);
         EmailAddress = email!;
         emailModel.NewEmail = email;
-        IsEmailConfirmed = await UserManager.IsEmailConfirmedAsync(User);
+        IsEmailConfirmed = await UserManager.IsEmailConfirmed(User);
     }
 
     private async Task SendVerificationEmail()

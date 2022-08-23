@@ -1,0 +1,84 @@
+﻿@page "/Account/ExternalLogin"
+
+@using BlazorIdentity.Server
+@using BlazorIdentity.ServerApp.Data
+@using Microsoft.AspNetCore.WebUtilities
+
+@inject NavigationManager NavManager
+
+<PageTitle>Register</PageTitle>
+
+<h1>Register</h1>
+
+@if (!string.IsNullOrEmpty(alertMessage))
+{
+    <BSAlert @ref="alert" Color="BSColor.Success" IsDismissible="true">
+        @alertMessage
+    </BSAlert>
+}
+
+<BlazorIdentity.UI.ExternalLogin TUser="AppUser"
+                                 ReturnUrl="@ReturnUrl"
+                                 OnHandleLogin="@HandleLogin"
+                                 OnHandleRegister="@HandleRegister"
+                                 OnHandleError="@HandleError" />
+
+@code {
+
+    public string Provider { get; set; } = string.Empty;
+
+    public string Email { get; set; } = string.Empty;
+
+    public string ReturnUrl { get; set; } = string.Empty;
+
+    private BSAlert? alert;
+    private string? alertMessage;
+
+    protected override void OnInitialized()
+    {
+        var uri = NavManager.ToAbsoluteUri(NavManager.Uri);
+
+        if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("returnUrl", out var returnUrl))
+        {
+            ReturnUrl = returnUrl!;
+        }
+    }
+
+    protected void HandleError(string errorMessage)
+    {
+        alertMessage = errorMessage;
+        alert?.Open();
+    }
+
+    protected void HandleLogin(SignInResult signInResult)
+    {
+        try
+        {
+            if (signInResult.IsLockedOut)
+            {
+                NavManager.NavigateTo("/Account/LockedOut");
+            }
+            else
+            {
+                NavManager.NavigateTo(signInResult.ReturnUrl);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.ToString());
+        }
+    }
+
+    private void HandleRegister(RegisterResult registerResult)
+    {
+        if (registerResult.RequireConfirmedAccount)
+        {
+            NavManager.NavigateTo($"/Account/RegisterConfirmation?Email={registerResult.Email}&ReturnUrl={registerResult.ReturnUrl}");
+        }
+        else
+        {
+            NavManager.NavigateTo(registerResult.ReturnUrl);
+        }
+    }
+
+}
