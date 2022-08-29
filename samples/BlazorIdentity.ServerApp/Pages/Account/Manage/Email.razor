@@ -1,9 +1,27 @@
 ﻿@page "/Account/Email"
 
+@using BlazorIdentity.ServerApp.Data
+
 <PageTitle>Manage email</PageTitle>
 
+<h1>Manage email</h1>
 
+@if (!string.IsNullOrEmpty(alertMessage))
+{
+	<BSAlert @ref="@alert" Color="BSColor.Success" IsDismissible="true">
+		@alertMessage
+	</BSAlert>
+}
+
+<BlazorIdentity.UI.Manage.Email TUser="AppUser" OnEmailSent="HandleEmailSent" />
 
 @code {
+	private BSAlert? alert;
+	private string? alertMessage;
 
+	private void HandleEmailSent(string message)
+	{
+		alertMessage = message;
+		alert?.Open();
+	}
 }

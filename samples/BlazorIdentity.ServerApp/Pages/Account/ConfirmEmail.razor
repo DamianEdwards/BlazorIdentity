@@ -1,0 +1,34 @@
+﻿@page "/Account/ConfirmEmail/{userId}/{confirmationCode}"
+
+@using BlazorIdentity.ServerApp.Data
+
+<PageTitle>Confirm Email</PageTitle>
+
+<h1>Confirm Email</h1>
+
+@if (!string.IsNullOrEmpty(alertMessage))
+{
+    <BSAlert @ref="alert" Color="BSColor.Success" IsDismissible="true">
+        @alertMessage
+    </BSAlert>
+}
+
+<BlazorIdentity.UI.ConfirmEmail TUser="AppUser" UserId="@userId" ConfirmationCode="@confirmationCode" OnConfirmEmailSent="HandleConfirmEmail" />
+
+@code {
+
+	[Parameter]
+	public string userId { get; set; } = default!;
+
+	[Parameter]
+	public string confirmationCode { get; set; } = default!;
+
+    private BSAlert? alert;
+    private string? alertMessage;
+
+    private void HandleConfirmEmail(string message)
+    {
+        alertMessage = message;
+        alert?.Open();
+    }
+}

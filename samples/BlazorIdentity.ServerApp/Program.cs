@@ -15,7 +15,9 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
-builder.Services.AddBlazorServerIdentity<AppUser, IdentityRole>(options => options.SignIn.RequireConfirmedAccount = false)
+var expiryTimeSpan = builder.Configuration.GetValue<int>("CookieExpiryTimeSpanInMinutes");
+
+builder.Services.AddBlazorServerIdentity<AppUser, IdentityRole>(options => options.SignIn.RequireConfirmedAccount = false, expiryTimeSpan)
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders();
 
@@ -28,6 +30,22 @@ builder.Services.AddScoped<AuthenticationStateProvider, RevalidatingIdentityAuth
 builder.Services.AddSingleton<WeatherForecastService>();
 
 builder.Services.AddBlazorStrap();
+
+// TODO: This is where we would add external login providers if following the normal ASPNetCore Identity pattern
+// Values would be stored in user secrets for dev and hopefully KeyVault for a production application
+//builder.Services.AddAuthentication()
+//    .AddMicrosoftAccount(options =>
+//    {
+//        options.ClientId = builder.Configuration.GetValue<string>("Microsoft:ClientId")!;
+//        options.ClientSecret = builder.Configuration.GetValue<string>("Microsoft:ClientSecret")!;
+//        options.AuthorizationEndpoint = builder.Configuration.GetValue<string>("Microsoft:AuthorizationEndpoint")!;
+//        options.TokenEndpoint = builder.Configuration.GetValue<string>("Microsoft:TokenEndpoint")!;
+//    })
+//    .AddGoogle(options =>
+//    {
+//        options.ClientId = builder.Configuration.GetValue<string>("Google:ClientId")!;
+//        options.ClientSecret = builder.Configuration.GetValue<string>("Google:ClientSecret")!;
+//    });
 
 var app = builder.Build();
 
@@ -53,7 +71,12 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapBlazorServerIdentityApi<AppUser>();
-app.MapBlazorHub();
-app.MapFallbackToPage("/_Host");
+
+app.UseEndpoints(endpoints =>
+{
+    endpoints.MapControllers();
+    endpoints.MapBlazorHub();
+    endpoints.MapFallbackToPage("/_Host");
+});
 
 app.Run();

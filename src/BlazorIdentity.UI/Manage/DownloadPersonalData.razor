@@ -1,0 +1,52 @@
+﻿@typeparam TUser where TUser : class
+
+@using Microsoft.Extensions.Logging
+@using Microsoft.JSInterop
+@using System.Text.Json
+
+@inject IBlazorUserManager<TUser> UserManager
+@inject AuthenticationStateProvider AuthProvider
+@inject IJSRuntime js
+@inject ILogger<DownloadPersonalData<TUser>> logger
+
+@code {
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; } = default!;
+
+    [Parameter]
+    public EventCallback<Dictionary<string,string>> OnDownloadPersonalData { get; set; }
+
+//    public string StatusMessage { get; set; } = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await authenticationStateTask;
+
+        var user = await UserManager.GetUserAsync(authState.User);
+
+        if (user is null)
+        {
+            throw new InvalidOperationException("Unexpected failure when loading user.");
+        }
+
+        logger.LogWarning("User with ID {UserId} asked for their personal data.", UserManager.GetUserIdAsync(user));
+
+        var personalData = new Dictionary<string, string>();
+        var personalDataProps = UserManager.GetPersonalData(user);
+
+        foreach(var p in personalDataProps)
+        {
+            personalData.Add(p.Key, p.Value);
+        }
+        var logins = await UserManager.GetLoginsAsync(user!);
+
+        foreach(var l in logins)
+        {
+            personalData.Add($"{l.LoginProvider} external login provider key", l.ProviderKey);
+        }
+        var key = await UserManager.GetAuthenticatorKeyAsync(user!);
+        personalData.Add($"Authenticator Key", key ?? "null");
+
+        await OnDownloadPersonalData.InvokeAsync(personalData);
+	}
+}

@@ -1,0 +1,166 @@
+﻿@typeparam TUser where TUser : class
+
+@using Microsoft.Extensions.Logging
+@using System.Security.Claims
+@using System.Text
+@using System.Text.Encodings.Web
+@using System.Text.Json
+
+@inject IBlazorSignInManager<TUser> SignInManager
+@inject IBlazorUserManager<TUser> UserManager
+@inject IBlazorUserStore<TUser> UserStore
+@inject NavigationManager NavManager
+@inject IBlazorEmailSender EmailSender
+
+<h4>Associate your @ProviderDisplayName account.</h4>
+
+<hr />
+
+
+<p id="external-login-description" class="text-info">
+    You've successfully authenticated with <strong>@ProviderDisplayName</strong>.
+    Please enter an email address for this site below and click the Register button to finish
+    logging in.
+</p>
+
+<div class="row">
+    <div class="col-md-4">
+
+        <EditForm EditContext="@editContext" OnValidSubmit="HandleSubmit">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+
+            <div class="mb-3">
+                <label for="Input.Email" class="form-label">Email</label>
+                <InputText id="email" class="form-control" @bind-Value="Input.Email" />
+            </div>
+
+            <button type="submit" class="btn btn-primary">Register</button>
+        </EditForm>
+    </div>
+</div>
+
+
+@code {
+    private EditContext? editContext;
+    private ValidationMessageStore? messageStore;
+    private IBlazorUserEmailStore<TUser>? emailStore;
+
+    [Parameter]
+    public string ReturnUrl { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<string> OnHandleError { get; set; }
+
+    [Parameter]
+    public EventCallback<SignInResult> OnHandleLogin { get; set; }
+
+    [Parameter]
+    public EventCallback<RegisterResult> OnHandleRegister { get; set; }
+
+    public string ErrorMessage { get; set; } = string.Empty;
+
+    public InputModel Input { get; set; } = default!;
+
+    [Parameter]
+    public Func<TUser>? OnCreateUser { get; set; }
+
+    public string ProviderDisplayName { get; set; } = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Input = new InputModel();
+        editContext = new(Input);
+        messageStore = new(editContext);
+
+        if (!UserManager.SupportsUserEmail)
+        {
+            throw new NotSupportedException("The UI requires a user store with email support.");
+        }
+
+        emailStore = (IBlazorUserEmailStore<TUser>) UserStore;
+
+        var info = await SignInManager.GetExternalLoginInfoAsync();
+
+        if (info == null)
+        {
+            ErrorMessage = $"Error loading external login information.";
+            await OnHandleError.InvokeAsync(ErrorMessage);
+            return;
+        }
+
+        Input.Email = info.Principal.FindFirst(ClaimTypes.Email)!.Value;
+        ProviderDisplayName = info.DisplayName;
+        StateHasChanged();
+    }
+
+    protected async Task HandleSubmit()
+    {
+        var info = await SignInManager.GetExternalLoginInfoAsync();
+        if (info == null)
+        {
+            ErrorMessage = $"Error loading external login information.";
+            await OnHandleError.InvokeAsync(ErrorMessage);
+            return;
+        }
+
+        if (emailStore is null) throw new InvalidOperationException("Component not initialized");
+
+        var user = OnCreateUser is not null ? OnCreateUser() : DefaultCreateUser();
+        await UserStore.SetUserNameAsync(user, Input.Email, CancellationToken.None);
+        await emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);
+        var result = await UserManager.CreateAsync(user!);
+
+        if (result.Succeeded)
+        {
+            var userId = await UserManager.GetUserIdAsync(user);
+
+            // TODO: Generate & send email confirmation
+            var code = await UserManager.GenerateEmailConfirmationTokenAsync(user);
+            code = System.Web.HttpUtility.UrlEncode(Encoding.UTF8.GetBytes(code));
+
+            var url = $"/account/confirmemail?userid={userId}&code={code}&returnurl={ReturnUrl}";
+
+            if (UserManager.Options.SignIn.RequireConfirmedAccount)
+            {
+                await EmailSender.SendEmailAsync(Input.Email!, "Confirm your email",
+                $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(url)}'>clicking here</a>.");
+
+                await OnHandleRegister.InvokeAsync(new RegisterResult { RequireConfirmedAccount = true, ReturnUrl = ReturnUrl, Email = Input.Email! });
+            }
+            else
+            {
+                await SignInManager.SignInAsync(user, isPersistent: false);
+
+                await OnHandleRegister.InvokeAsync(new RegisterResult { RequireConfirmedAccount = false, ReturnUrl = ReturnUrl, Email = Input.Email! });
+            }
+        }
+        else
+        {
+            foreach (var error in result.Errors)
+            {
+                messageStore?.Add(() => Input, error.Description);
+            }
+            editContext?.NotifyValidationStateChanged();
+        }
+    }
+
+    private TUser DefaultCreateUser()
+    {
+        try
+        {
+            return Activator.CreateInstance<TUser>();
+        }
+        catch
+        {
+            throw new InvalidOperationException($"Can't create an instance of '{nameof(TUser)}'. " +
+                $"Ensure that '{nameof(TUser)}' is not an abstract class and has a parameterless " +
+                $"constructor or set the '{nameof(OnCreateUser)}' parameter to a delegate that can " +
+                "create an instance.");
+        }
+    }
+    public class InputModel
+    {
+        public string? Email { get; set; } = string.Empty;
+    }
+}

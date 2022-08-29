@@ -1,0 +1,27 @@
+﻿@page "/Account/ResendEmailConfirmation"
+
+@using BlazorIdentity.ServerApp.Data
+
+<PageTitle>Resend email confirmation</PageTitle>
+
+<h1>Resend email confirmation</h1>
+
+@if (!string.IsNullOrEmpty(alertMessage))
+{
+    <BSAlert @ref="@alert" Color="BSColor.Success" IsDismissible="true">
+        @alertMessage
+    </BSAlert>
+}
+
+<BlazorIdentity.UI.ResendEmailConfirmation TUser="AppUser" OnEmailSent="HandleEmailSent" />
+
+@code {
+    private BSAlert? alert;
+    private string? alertMessage;
+
+    private void HandleEmailSent(string message)
+    {
+        alertMessage = message;
+        alert?.Open();
+    }
+}

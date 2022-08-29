@@ -32,4 +32,5 @@ internal class BlazorServerUserStore<TUser> : IBlazorUserStore<TUser>, IBlazorUs
     {
         return _userStore.SetUserNameAsync(user, userName, cancellationToken);
     }
+
 }

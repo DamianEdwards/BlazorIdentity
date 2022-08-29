@@ -1,29 +1,85 @@
 ﻿@typeparam TUser where TUser : class
 
+@using Microsoft.Extensions.Logging
+
 @inject IBlazorSignInManager<TUser> SignInManager
+@inject IBlazorUserManager<TUser> UserManager
+@inject ILogger<Login<TUser>> logger
+@inject NavigationManager NavManager
 
-<EditForm class="col-5" EditContext="editContext" OnSubmit="@HandleSubmit">
-    <DataAnnotationsValidator />
-    <ValidationSummary />
+<div class="row">
+    <EditForm class="col-md-4" EditContext="editContext" OnSubmit="@HandleSubmit">
+        <h4>Use a local account to log in.</h4>
+        <hr />
+        <DataAnnotationsValidator />
+        <ValidationSummary />
 
-    <div class="mb-3">
-        <label for="email" class="form-label">Email address</label>
-        <InputText id="email" class="form-control" @bind-Value="loginModel.Email" />
-    </div>
-    <div class="mb-3">
-        <label for="password" class="form-label">Password</label>
-        <InputText id="password" type="password" class="form-control" @bind-Value="loginModel.Password" />
-    </div>
-    <div class="mb-3 form-check">
-        <InputCheckbox id="rememberMe" class="form-check-input" @bind-Value="loginModel.RememberMe" />
-        <label class="form-check-label" for="exampleCheck1">Remember me</label>
-    </div>
-    <div>
-        <button type="submit" class="btn btn-primary">Login</button>
-    </div>
-</EditForm>
+        <div class="mb-3">
+            <label for="email" class="form-label">Email address</label>
+            <InputText id="email" class="form-control" @bind-Value="loginModel.Email" />
+        </div>
+        <div class="mb-3">
+            <label for="password" class="form-label">Password</label>
+            <InputText id="password" type="password" class="form-control" @bind-Value="loginModel.Password" />
+        </div>
+        <div class="mb-3 form-check">
+            <InputCheckbox id="rememberMe" class="form-check-input" @bind-Value="loginModel.RememberMe" />
+            <label class="form-check-label" for="exampleCheck1">Remember me</label>
+        </div>
+        <div>
+            <button type="submit" class="btn btn-primary">Login</button>
+        </div>
+        <br />
+        <div>
+            <p>
+                <a href="/Account/ForgotPassword">Forgot your password?</a>
+            </p>
+            <p>
+                <a href="/Account/Register/@ReturnUrl">Register as a new user</a>
+            </p>
+            <p>
+                <a href="/Account/ResendEmailConfirmation">Resend email confirmation</a>
+            </p>
+        </div>
+    </EditForm>
 
-@* TODO: Show progress UI while logging in? *@
+    <div class="col-md-6 col-md-offset-2">
+        <h4>Use another service to log in.</h4>
+        <hr />
+        @{
+            if (!ExternalLogins.Any())
+            {
+                <div>
+                    <p>
+                        There are no external authentication services configured. See this <a href="https://go.microsoft.com/fwlink/?LinkID=532715">
+                            article
+                            about setting up this ASP.NET application to support logging in via external services
+                        </a>.
+                    </p>
+                </div>
+            }
+            else
+            {
+                <form method="post" action="@Action" class="form-horizontal">
+                    <div>
+                        @foreach (var provider in ExternalLogins)
+                        {
+                            <div>
+                                <button type="submit" class="btn btn-primary" name="provider" value="@provider.Name"
+                                title="Log in using your @provider.Name account">
+                                    @provider.Name
+                                </button>
+                                <br /><br />
+                            </div>
+                        }
+                    </div>
+                </form>
+            }
+        }
+    </div>
+</div>
+
+
 
 @code {
     private EditContext? editContext;
@@ -34,12 +90,29 @@
     public EventCallback OnLogin { get; set; }
 
     [Parameter]
+    public EventCallback<bool> OnRequiresTwoFactor { get; set; }
+
+    [Parameter]
+    public EventCallback OnLockedOut { get; set; }
+
+    [Parameter]
+    public string ReturnUrl { get; set; } = default!;
+
+    [Parameter]
     public string FailureMessage { get; set; } = "Login failed. Please check the email address and password.";
 
-    protected override void OnInitialized()
+    public IList<AuthenticationScheme> ExternalLogins { get; set; } = new List<AuthenticationScheme> ();
+
+    public string Action { get; set; } = string.Empty;
+
+    protected async override Task OnInitializedAsync()
     {
         editContext = new(loginModel);
         messageStore = new(editContext);
+        ReturnUrl = ReturnUrl ?? "/";
+        Action = $"/api/account/ExternalLogin?returnUrl={ReturnUrl}";
+        await SignInManager.SignOutAsync();
+        ExternalLogins = (await SignInManager.GetExternalAuthenticationSchemesAsync()).ToList();
     }
 
     private async Task HandleSubmit()
@@ -51,10 +124,20 @@
             return;
         }
 
-        var result = await SignInManager.PasswordSignInAsync(loginModel.Email!, loginModel.Password!, loginModel.RememberMe, lockoutOnFailure: false);
+        var result = await SignInManager.PasswordSignInAsync(loginModel.Email!, loginModel.Password!, isPersistent: true, lockoutOnFailure: false);
         if (result.Succeeded)
         {
+            logger.LogWarning("User {user} logged in successfully", loginModel.Email);
             await OnLogin.InvokeAsync();
+        }
+        if (result.RequiresTwoFactor)
+        {
+            await OnRequiresTwoFactor.InvokeAsync(loginModel.RememberMe);
+        }
+        if (result.IsLockedOut)
+        {
+            logger.LogWarning("User {Email} locked out.", loginModel.Email);
+            await OnLockedOut.InvokeAsync();
         }
         else
         {
@@ -75,6 +158,9 @@
         [Display(Name = "Password")]
         public string? Password { get; set; }
 
+        [Display(Name = "Remember me?")]
         public bool RememberMe { get; set; }
     }
+
+
 }

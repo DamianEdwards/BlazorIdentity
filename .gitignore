@@ -348,3 +348,11 @@ MigrationBackup/
 
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
+/samples/BlazorIdentity.ServerApp/.config/dotnet-tools.json
+/BlazorIdentity.Api/Controllers/AccountController.cs
+/BlazorIdentity.Api/Controllers/WeatherForecastController.cs
+/BlazorIdentity.Api/Properties/launchSettings.json
+*.json
+/BlazorIdentity.Api/BlazorIdentity.Api.csproj
+/BlazorIdentity.Api/Program.cs
+/BlazorIdentity.Api/WeatherForecast.cs

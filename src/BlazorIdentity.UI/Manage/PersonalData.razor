@@ -1,0 +1,38 @@
+﻿@typeparam TUser where TUser : class
+
+@inject IBlazorUserManager<TUser> UserManager
+
+<div class="row">
+	<div class="col md-6">
+		<p>Your account contains personal data that you have given us. This page allows you to download or delete that data.</p>
+		<p>
+			<strong>Deleting this data will permanently remove your account, and this cannot be recovered.</strong>
+		</p>
+		<p>
+            <button class="btn btn-primary" onclick="@(() => DownloadPersonalData())">Download</button>
+		</p>
+		<p>
+			<button class="btn btn-danger" onclick="@(() => DeletePersonalData())">Delete</button>
+		</p>
+	</div>
+
+</div>
+
+@code {
+
+    [Parameter]
+    public EventCallback OnDownloadPersonalData { get; set; }
+
+    [Parameter]
+    public EventCallback OnDeletPersonalData { get; set; }
+
+    private async void DeletePersonalData()
+    {
+        await OnDeletPersonalData.InvokeAsync();
+    }
+
+    private async void DownloadPersonalData()
+    {
+        await OnDownloadPersonalData.InvokeAsync();
+    }
+}

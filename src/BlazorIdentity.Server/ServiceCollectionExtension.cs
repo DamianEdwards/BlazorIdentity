@@ -8,7 +8,7 @@ namespace Microsoft.Extensions.DependencyInjection;
 
 public static class BlazorServerIdentityServiceCollectionExtension
 {
-    public static IdentityBuilder AddBlazorServerIdentity<TUser, TRole>(this IServiceCollection services, Action<AspNetCore.Identity.IdentityOptions> setupAction)
+    public static IdentityBuilder AddBlazorServerIdentity<TUser, TRole>(this IServiceCollection services, Action<AspNetCore.Identity.IdentityOptions> setupAction, int expiryTimeSpan)
         where TUser : class
         where TRole : class
     {
@@ -31,11 +31,12 @@ public static class BlazorServerIdentityServiceCollectionExtension
         .AddCookie(IdentityConstants.ExternalScheme, o =>
         {
             o.Cookie.Name = IdentityConstants.ExternalScheme;
-            o.ExpireTimeSpan = TimeSpan.FromMinutes(5);
+            o.ExpireTimeSpan = TimeSpan.FromMinutes(expiryTimeSpan);
         })
         .AddCookie(IdentityConstants.TwoFactorRememberMeScheme, o =>
         {
             o.Cookie.Name = IdentityConstants.TwoFactorRememberMeScheme;
+            o.ExpireTimeSpan = TimeSpan.FromMinutes(expiryTimeSpan);
             o.Events = new CookieAuthenticationEvents
             {
                 OnValidatePrincipal = SecurityStampValidator.ValidateAsync<ITwoFactorSecurityStampValidator>
@@ -44,7 +45,7 @@ public static class BlazorServerIdentityServiceCollectionExtension
         .AddCookie(IdentityConstants.TwoFactorUserIdScheme, o =>
         {
             o.Cookie.Name = IdentityConstants.TwoFactorUserIdScheme;
-            o.ExpireTimeSpan = TimeSpan.FromMinutes(5);
+            o.ExpireTimeSpan = TimeSpan.FromMinutes(expiryTimeSpan);
         });
 
         // Hosting doesn't add IHttpContextAccessor by default
@@ -69,6 +70,8 @@ public static class BlazorServerIdentityServiceCollectionExtension
         services.TryAddScoped<IBlazorUserManager<TUser>, BlazorServerUserManager<TUser>>();
         services.TryAddScoped<IBlazorSignInManager<TUser>, BlazorServerSignInManager<TUser>>();
         services.TryAddScoped<IBlazorUserStore<TUser>, BlazorServerUserStore<TUser>>();
+
+        services.TryAddTransient<IBlazorEmailSender, BlazorServerEmailSender>();
 
         if (setupAction != null)
         {

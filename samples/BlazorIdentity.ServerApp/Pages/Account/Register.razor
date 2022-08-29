@@ -1,25 +1,33 @@
 ﻿@page "/Account/Register"
 
-@using BlazorIdentity.ServerApp.Data
+@using BlazorIdentity.ServerApp.Data    
 
-@inject NavigationManager Navigation
+@inject NavigationManager NavManager
 
 <PageTitle>Register</PageTitle>
 
-<h3>Register</h3>
+<h1>Register</h1>
 
-<BlazorIdentity.UI.Register TUser="AppUser" OnRegistered="HandleRegistered" />
+<BlazorIdentity.UI.Register TUser="AppUser" OnRegistered="HandleRegistered" ReturnUrl="@ReturnUrl" />
 
 @code {
-    private void HandleRegistered(bool requireConfirmedAccount)
+    public string ReturnUrl { get; set; } = default!;
+
+    protected override void OnInitialized()
     {
-        if (requireConfirmedAccount)
+        NavManager.TryGetQueryString<string>("ReturnUrl", out var returnUrl);
+        ReturnUrl = !string.IsNullOrEmpty(returnUrl) ? returnUrl : "/";
+    }
+
+    private void HandleRegistered(RegisterResult result)
+    {
+        if (result.RequireConfirmedAccount)
         {
-            // TODO: Handle account confirmation
+            NavManager.NavigateTo($"/Account/RegisterConfirmation?Email={result.Email}&ReturnUrl={result.ReturnUrl}");
         }
         else
         {
-            Navigation.NavigateTo("/");
+            NavManager.NavigateTo(result.ReturnUrl);
         }
     }
 }

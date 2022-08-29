@@ -1,0 +1,62 @@
+﻿@typeparam TUser where TUser : class
+
+@using System.Text
+@using System.Text.Encodings.Web
+
+@inject IBlazorUserManager<TUser> UserManager
+@inject IBlazorSignInManager<TUser> SignInManager
+@inject IBlazorUserStore<TUser> UserStore
+
+
+@code {
+    [Parameter]
+    public string UserId { get; set; } = string.Empty;
+    [Parameter]
+    public string Email { get; set; } = string.Empty;
+    [Parameter]
+    public string Code { get; set; } = string.Empty;
+    [Parameter]
+    public EventCallback<string> OnShowMessage { get; set; }
+
+    public string StatusMessage { get; set; } = string.Empty;
+
+    private IBlazorUserEmailStore<TUser>? emailStore;
+
+    protected override async Task OnInitializedAsync()
+    {
+        emailStore = (IBlazorUserEmailStore<TUser>) UserStore;
+
+        var user = await UserManager.FindByIdAsync(UserId);
+        Code = System.Web.HttpUtility.UrlDecode(Code!, System.Text.Encoding.UTF8);
+        Email = System.Web.HttpUtility.UrlDecode(Email!, System.Text.Encoding.UTF8);
+
+        // NOTE: Went with this new call from UserManager since EmailStore.SetEmailAsync does not provide for
+        // matching up the token
+        var result = await UserManager.ChangeEmailAsync(user!, Email, Code);
+
+        if (!result.Succeeded)
+        {
+            StatusMessage = "Error changing email.";
+            await OnShowMessage.InvokeAsync(StatusMessage);
+			return;
+		}
+
+		// email and username are the same thing, so we must change both
+
+		// NOTE: Went with this new call from UserManager since UserStore.SetUserNameAsync 
+		// does not provide for returning an IdentityResult
+
+		var setUserNameResult = await UserManager.ChangeUserNameAsync(user!, Email);
+
+		if (!setUserNameResult.Succeeded)
+		{
+			StatusMessage = "Error changing user name.";
+            await OnShowMessage.InvokeAsync(StatusMessage);
+			return;
+		}
+
+		await SignInManager.RefreshSignInAsync(user!);
+		StatusMessage = "Thank you for confirming your email change.";
+        await OnShowMessage.InvokeAsync(StatusMessage);
+	}
+}

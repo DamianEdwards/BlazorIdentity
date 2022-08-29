@@ -1,0 +1,31 @@
+﻿@page "/Account/LoginWith2fa/{RememberMe:bool}/{ReturnUrl}"
+
+@using BlazorIdentity.ServerApp.Data
+
+@inject NavigationManager NavManager
+
+<PageTitle>Two-factor authentication</PageTitle>
+
+<h1>Two-factor authentication</h1>
+
+<BlazorIdentity.UI.LoginWith2fa TUser="AppUser" RememberMe="@RememberMe" ReturnUrl="@ReturnUrl" OnLogin="HandleLogin" OnLockedOut="HandleLockedOut" />
+
+@code {
+
+	[Parameter]
+	public bool RememberMe { get; set; }
+
+	[Parameter]
+	public string ReturnUrl { get; set; } = string.Empty;
+
+	private void HandleLogin()
+	{
+        NavManager.NavigateTo(ReturnUrl);
+	}
+
+    private void HandleLockedOut()
+    {
+        NavManager.NavigateTo("/Account/Lockedout");
+    }
+
+}

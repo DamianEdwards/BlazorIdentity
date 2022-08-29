@@ -1,0 +1,100 @@
+﻿@typeparam TUser where TUser : class
+
+@using Microsoft.Extensions.Logging
+@inject IBlazorSignInManager<TUser> SignInManager
+@inject IBlazorUserManager<TUser> UserManager
+@inject ILogger<LoginWithRecoveryCode<TUser>> logger
+
+<hr />
+
+<p>
+    You have requested to log in with a recovery code. This login will not be remembered until you provide
+    an authenticator app code at log in or disable 2FA and log in again.
+</p>
+
+<EditForm class="col-5" EditContext="editContext" OnSubmit="@HandleSubmit">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="mb-3">
+        <label for="RecoveryCode" class="form-label">Recovery code</label>
+        <InputText id="RecoveryCode" class="form-control" @bind-Value="loginModel.RecoveryCode" />
+    </div>
+
+    <div>
+        <button type="submit" class="btn btn-primary">Login</button>
+    </div>
+
+
+</EditForm>
+
+@code {
+    private EditContext? editContext;
+    private LoginModel loginModel = new();
+    private ValidationMessageStore? messageStore;
+
+    [Parameter]
+    public string ReturnUrl { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback OnLogin { get; set; }
+
+    [Parameter]
+    public EventCallback OnLockedOut { get; set; }
+
+    public string FailureMessage { get; set; } = "Invalid recovery code entered.";
+
+    protected override void OnInitialized()
+    {
+        editContext = new(loginModel);
+        messageStore = new(editContext);
+    }
+
+    private async Task HandleSubmit()
+    {
+        messageStore?.Clear();
+
+        if (editContext?.Validate() != true)
+        {
+            return;
+        }
+
+        var user = await SignInManager.GetTwoFactorAuthenticationUserAsync();
+
+        if (user is null)
+        {
+            throw new InvalidOperationException($"Unable to load two-factor authentication user.");
+        }
+
+        var recoveryCode = loginModel.RecoveryCode.Replace(" ", string.Empty);
+
+        var result = await SignInManager.TwoFactorRecoveryCodeSignInAsync(loginModel.RecoveryCode);
+
+        var userId = await UserManager.GetUserIdAsync(user);
+
+        if (result.Succeeded)
+        {
+            logger.LogWarning("User with ID '{UserId}' logged in with a recovery code.", userId);
+            await OnLogin.InvokeAsync();
+        }
+        if (result.IsLockedOut)
+        {
+            logger.LogWarning("User account locked out.");
+            await OnLockedOut.InvokeAsync();
+        }
+        else
+        {
+            logger.LogWarning("Invalid recovery code entered for user with ID '{UserId}' ", userId);
+            messageStore?.Add(() => loginModel, FailureMessage);
+            editContext.NotifyValidationStateChanged();
+        }
+    }
+
+    public class LoginModel
+    {
+        [Required]
+        [DataType(DataType.Text)]
+        [Display(Name = "Recovery Code")]
+        public string RecoveryCode { get; set; } = default!;
+    }
+}

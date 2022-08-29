@@ -1,0 +1,86 @@
+﻿@typeparam TUser where TUser : class
+
+@using Microsoft.Extensions.Logging
+@using System.Text
+@using System.Text.Encodings.Web
+
+@inject IBlazorUserManager<TUser> UserManager
+@inject ILogger<ResendEmailConfirmation<TUser>> logger
+@inject NavigationManager NavManager
+@inject IBlazorEmailSender EmailSender
+
+<h4>Enter your email.</h4>
+
+<hr />
+
+<div class="row">
+	<EditForm class="col-5" EditContext="editContext" OnSubmit="@HandleSubmit">
+		<DataAnnotationsValidator />
+		<ValidationSummary />
+
+		<div class="mb-3">
+			<label for="Email" class="form-label">Email address</label>
+			<InputText id="Email" class="form-control" @bind-Value="resendEmailModel.Email" />
+		</div>
+
+		<div>
+			<button type="submit" class="btn btn-primary">Resend</button>
+		</div>
+
+	</EditForm>
+</div>
+
+@code {
+    private EditContext? editContext;
+    private ResendEmailModel resendEmailModel = new();
+    private ValidationMessageStore? messageStore;
+
+    private string StatusMessage = "Verification email sent. Please check your email.";
+
+    [Parameter]
+    public EventCallback<string> OnEmailSent { get; set; }
+
+    protected override void OnInitialized()
+    {
+        editContext = new(resendEmailModel);
+        messageStore = new(editContext);
+    }
+
+    private async Task HandleSubmit()
+    {
+        messageStore?.Clear();
+
+        if (editContext?.Validate() != true)
+        {
+            return;
+        }
+        var user = await UserManager.FindByEmailAsync(resendEmailModel.Email);
+
+        if (user == null)
+        {
+            messageStore?.Add(() => resendEmailModel, "Error re-sending confirmation email.");
+            editContext.NotifyValidationStateChanged();
+            return;
+        }
+
+        var userId = UserManager.GetUserIdAsync(user);
+        var code = await UserManager.GenerateEmailConfirmationTokenAsync(user);
+        code = System.Web.HttpUtility.UrlEncode(Encoding.UTF8.GetBytes(code));
+
+        var url = $"/Account/ConfirmEmail/{userId}/{code}";
+
+        await EmailSender.SendEmailAsync(resendEmailModel.Email, 
+            "Confirm your email",
+            $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(url)}'>clicking here</a>.");
+
+        await OnEmailSent.InvokeAsync(StatusMessage);
+	}
+
+	public class ResendEmailModel
+	{
+		[Required]
+		[DataType(DataType.EmailAddress)]
+		[Display(Name = "Email address")]
+		public string Email { get; set; } = default!;
+	}
+}

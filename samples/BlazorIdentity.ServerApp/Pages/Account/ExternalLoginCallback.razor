@@ -1,0 +1,77 @@
+﻿@page "/Account/ExternalLoginCallback"
+
+@using System.Security.Claims
+@using BlazorIdentity.Server
+@using BlazorIdentity.ServerApp.Data
+@using Microsoft.AspNetCore.WebUtilities
+
+@inject NavigationManager NavManager
+
+<PageTitle>Register</PageTitle>
+
+<h1>Register</h1>
+
+@if (!string.IsNullOrEmpty(alertMessage))
+{
+    <BSAlert @ref="alert" Color="BSColor.Success" IsDismissible="true">
+        @alertMessage
+    </BSAlert>
+}
+
+<BlazorIdentity.UI.ExternalLoginCallback TUser="AppUser"
+                                         OnHandleLogin="@HandleLogin"
+                                         OnHandleError="@HandleError"
+                                         OnHandleRegister="@HandleRegister"
+                                         ReturnUrl="@ReturnUrl"
+                                         RemoteError="@RemoteError" />
+
+@code {
+
+    public string ReturnUrl { get; set; } = string.Empty;
+
+    public string RemoteError { get; set; } = string.Empty;
+
+    private BSAlert? alert;
+    private string? alertMessage;
+
+    protected override void OnInitialized()
+    {
+        NavManager.TryGetQueryString<string>("ReturnUrl", out var returnUrl);
+        ReturnUrl = !string.IsNullOrEmpty(returnUrl) ? returnUrl : "/";
+
+        NavManager.TryGetQueryString<string>("remoteError", out var remoteError);
+        RemoteError = !string.IsNullOrEmpty(remoteError) ? remoteError : string.Empty;
+    }
+
+    private void HandleLogin(SignInResult signInResult)
+    {
+        try
+        {
+            if (signInResult.IsLockedOut)
+            {
+                NavManager.NavigateTo("/Account/LockOut", true, true);
+            }
+            else
+            {
+                NavManager.NavigateTo(signInResult.ReturnUrl);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.ToString());
+            HandleError($"Error in ExternalLoginCallback::HandleLogin: {ex.ToString()}");
+        }
+    }
+
+    private void HandleRegister(string returnUrl)
+    {
+        var url = $"/Account/ExternalLogin?returnUrl={returnUrl}";
+        NavManager.NavigateTo(url);
+    }
+
+    private void HandleError(string errorMessage)
+    {
+        alertMessage = errorMessage;
+        alert?.Open();
+    }
+}

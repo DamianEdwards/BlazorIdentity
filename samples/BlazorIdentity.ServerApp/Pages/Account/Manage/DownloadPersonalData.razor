@@ -1,0 +1,46 @@
+﻿@page "/account/downloadpersonaldata"
+
+@using BlazorIdentity.ServerApp.Data
+@using Microsoft.JSInterop
+@using System.Text.Json
+
+@inject IJSRuntime JS
+
+<PageTitle>Download Your Data</PageTitle>
+
+<h1>Download Your Data</h1>
+
+@if (!string.IsNullOrEmpty(alertMessage))
+{
+    <BSAlert @ref="@alert" Color="BSColor.Success" IsDismissible="true">
+        @alertMessage
+    </BSAlert>
+}
+
+<BlazorIdentity.UI.Manage.DownloadPersonalData TUser="AppUser" OnDownloadPersonalData="HandleDownloadData" />
+
+@code {
+    private BSAlert? alert;
+    private string? alertMessage;
+
+    private void HandleShowMessage(string message)
+    {
+        alertMessage = message;
+        alert?.Open();
+    }
+
+    private async void HandleDownloadData(Dictionary<string, string> personalData)
+    {
+        alertMessage = "Personal data has been downloaded";
+        alert?.Open();
+
+        var deserializedContent = JsonSerializer.SerializeToUtf8Bytes(personalData);
+        var fileStream = new MemoryStream(deserializedContent);
+
+        var fileName = "PersonalData.json";
+
+        using var streamRef = new DotNetStreamReference(stream: fileStream);
+
+        await JS.InvokeVoidAsync("downloadFileFromStream", fileName, streamRef);
+    }
+}

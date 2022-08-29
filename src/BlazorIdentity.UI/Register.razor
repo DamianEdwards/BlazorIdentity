@@ -3,6 +3,10 @@
 @inject IBlazorSignInManager<TUser> SignInManager
 @inject IBlazorUserManager<TUser> UserManager
 @inject IBlazorUserStore<TUser> UserStore
+@inject IBlazorEmailSender EmailSender
+
+@using System.Text
+@using System.Text.Encodings.Web
 
 <EditForm class="col-5" EditContext="editContext" OnSubmit="@HandleSubmit">
     <DataAnnotationsValidator />
@@ -31,7 +35,10 @@
     private IBlazorUserEmailStore<TUser>? emailStore;
 
     [Parameter]
-    public EventCallback<bool> OnRegistered { get; set; }
+    public string ReturnUrl { get; set; } = default!;
+
+    [Parameter]
+    public EventCallback<RegisterResult> OnRegistered { get; set; }
 
     [Parameter]
     public Func<TUser>? OnCreateUser { get; set; }
@@ -69,19 +76,25 @@
         if (result.Succeeded)
         {
             var userId = await UserManager.GetUserIdAsync(user);
-            // TODO: Generate & send email confirmation stuff
-            //var code = await UserManager.GenerateEmailConfirmationTokenAsync(user);
+
+            // TODO: Generate & send email confirmation
+            var code = await UserManager.GenerateEmailConfirmationTokenAsync(user);
+            code = System.Web.HttpUtility.UrlEncode(Encoding.UTF8.GetBytes(code));
+
+            var url = $"/account/confirmemail?userid={userId}&code={code}&returnurl={ReturnUrl}";
 
             if (UserManager.Options.SignIn.RequireConfirmedAccount)
             {
-                await OnRegistered.InvokeAsync(true);
+                await EmailSender.SendEmailAsync(registerModel.Email!, "Confirm your email",
+                $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(url)}'>clicking here</a>.");
+
+                await OnRegistered.InvokeAsync(new RegisterResult{ RequireConfirmedAccount = true, ReturnUrl = ReturnUrl, Email = registerModel.Email!});
             }
             else
             {
                 await SignInManager.SignInAsync(user, isPersistent: false);
 
-                // TODO: Implement return url?
-                await OnRegistered.InvokeAsync(false);
+                await OnRegistered.InvokeAsync(new RegisterResult { RequireConfirmedAccount = false, ReturnUrl = ReturnUrl, Email = registerModel.Email! });
             }
         }
         else
